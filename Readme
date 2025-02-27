@@ -6,3 +6,13 @@ as a starting point to build your project implementations.
 Also included are five C- programs from the C-Specification for your
 convenience during development and testing.
 
+jflex cminus.flex
+
+java -cp java-cup-11b.jar;. java_cup.Main -parser parser -symbols sym cminus.cup
+
+javac -cp .;java-cup-11b.jar -d . absyn/*.java parser.java sym.java Lexer.java ShowTreeVisitor.java Scanner.java Main.java
+
+java -cp .;java-cup-11b.jar Main fac.cm  
+
+clean
+del /Q parser.java Lexer.java sym.java *.class absyn\*.class *~

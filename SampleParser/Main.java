@@ -10,24 +10,31 @@
 
   where gcd.tiny is an test input file for the tiny language.
 */
-   
 import java.io.*;
 import absyn.*;
-   
+
 class Main {
   public final static boolean SHOW_TREE = true;
+  
   static public void main(String argv[]) {    
     /* Start the parser */
     try {
+      System.out.println("Starting parser on file: " + argv[0]);
       parser p = new parser(new Lexer(new FileReader(argv[0])));
-      Absyn result = (Absyn)(p.parse().value);      
+      Absyn result = (Absyn)(p.parse().value);
+      
+      if (result == null) {
+          System.out.println("Parsing returned NULL! Check input file.");
+      } else {
+          System.out.println("Parsing completed successfully.");
+      }
+      
       if (SHOW_TREE && result != null) {
          System.out.println("The abstract syntax tree is:");
          AbsynVisitor visitor = new ShowTreeVisitor();
          result.accept(visitor, 0); 
       }
     } catch (Exception e) {
-      /* do cleanup here -- possibly rethrow e */
       e.printStackTrace();
     }
   }
