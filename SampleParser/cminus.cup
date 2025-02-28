@@ -93,34 +93,182 @@ start with program;
 
 
 /* Grammar rules */
-program            ::= declaration_list {: System.out.println("DEBUG ENTERED PROGRAM"); :};
-declaration_list ::= declaration_list declaration {: System.out.println("DEBUG: Adding declaration"); :}
-                   | declaration {: System.out.println("DEBUG: Single declaration processed"); :};
-declaration       ::= var_declaration | fun_declaration;
-var_declaration   ::= type_specifier ID SCOLON | type_specifier ID LSQUARE NUM RSQUARE SCOLON;
-fun_declaration ::= type_specifier ID LPAREN params RPAREN compound_stmt {: System.out.println("DEBUG: Function declared: "); :};
-type_specifier    ::= BOOL | INT | VOID;
-params            ::= param_list | VOID;
-param_list        ::= param_list COMMA param | param;
-param            ::= type_specifier ID | type_specifier ID LSQUARE RSQUARE;
-compound_stmt ::= LCURLY local_declarations statement_list RCURLY {: System.out.println("DEBUG: Entered compound statement"); :};
-local_declarations ::= local_declarations var_declaration |;
-statement_list    ::= statement_list statement |;
-statement        ::= expression_stmt | compound_stmt | selection_stmt | iteration_stmt | return_stmt;
-expression_stmt ::= expression SCOLON {: System.out.println("DEBUG: Parsed an expression statement"); :} | SCOLON;
-selection_stmt   ::= IF LPAREN expression RPAREN statement | IF LPAREN expression RPAREN statement ELSE statement;
-iteration_stmt   ::= WHILE LPAREN expression RPAREN statement;
-return_stmt      ::= RETURN SCOLON | RETURN expression SCOLON;
-expression       ::= var ASSIGN expression | simple_expression;
-var             ::= ID | ID LSQUARE expression RSQUARE;
-simple_expression ::= additive_expression relop additive_expression | additive_expression;
-relop           ::= LT | LTE | GT | GTE | EQ | NEQ;
-additive_expression ::= additive_expression addop term | term;
-addop           ::= PLUS | MINUS;
-term ::= term mulop signed_factor {: System.out.println("DEBUG: Parsed term"); :} | signed_factor;
-mulop           ::= TIMES | DIVIDE;
-signed_factor   ::= MINUS signed_factor %prec UMINUS | factor;
-factor          ::= LPAREN expression RPAREN | var | call | NUM | TRUTH;
-call            ::= ID LPAREN args RPAREN;
-args            ::= arg_list |;
-arg_list ::= arg_list COMMA expression {: System.out.println("DEBUG: Parsed function arguments"); :} | expression;
+program ::= declaration_list 
+          {: 
+             System.out.println("DEBUG: Entered PROGRAM"); 
+          :};
+
+declaration_list ::= declaration_list declaration 
+                   {: 
+                      System.out.println("DEBUG: Adding declaration"); 
+                   :} 
+                   | declaration 
+                   {: 
+                      System.out.println("DEBUG: Single declaration processed"); 
+                   :};
+
+declaration ::= var_declaration 
+              {: 
+                 System.out.println("DEBUG: Parsed var_declaration"); 
+              :} 
+              | fun_declaration 
+              {: 
+                 System.out.println("DEBUG: Parsed fun_declaration"); 
+              :};
+
+var_declaration ::= type_specifier ID SCOLON 
+                  {: 
+                     System.out.println("DEBUG: Variable declaration: " + ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+                  :} 
+                  | type_specifier ID LSQUARE NUM RSQUARE SCOLON 
+                  {: 
+                     System.out.println("DEBUG: Array declaration: " + 
+                     ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value + 
+                     "[" + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value + "]"); 
+                  :};
+
+fun_declaration ::= type_specifier ID LPAREN params RPAREN compound_stmt 
+                  {: 
+                     System.out.println("DEBUG: Function declared: " + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value); 
+                  :};
+
+type_specifier ::= BOOL 
+                 {: System.out.println("DEBUG: Type BOOL"); :} 
+                 | INT 
+                 {: System.out.println("DEBUG: Type INT"); :} 
+                 | VOID 
+                 {: System.out.println("DEBUG: Type VOID"); :};
+
+params ::= param_list 
+         {: System.out.println("DEBUG: Parsed parameters"); :} 
+         | VOID 
+         {: System.out.println("DEBUG: Void parameter list"); :};
+
+param_list ::= param_list COMMA param 
+             {: System.out.println("DEBUG: Multiple parameters"); :} 
+             | param 
+             {: System.out.println("DEBUG: Single parameter"); :};
+
+param ::= type_specifier ID 
+        {: 
+           System.out.println("DEBUG: Parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+        :} 
+        | type_specifier ID LSQUARE RSQUARE 
+        {: 
+           System.out.println("DEBUG: Array parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value); 
+        :};
+
+compound_stmt ::= LCURLY local_declarations statement_list RCURLY 
+                {: System.out.println("DEBUG: Entered compound statement"); :};
+
+local_declarations ::= local_declarations var_declaration 
+                     {: System.out.println("DEBUG: Local variable declaration"); :} 
+                     | {: System.out.println("DEBUG: No local declarations"); :};
+
+statement_list ::= statement_list statement 
+                 {: System.out.println("DEBUG: Added statement"); :} 
+                 | {: System.out.println("DEBUG: No statements in list"); :};
+
+statement ::= expression_stmt 
+            {: System.out.println("DEBUG: Parsed expression statement"); :} 
+            | compound_stmt 
+            {: System.out.println("DEBUG: Parsed compound statement"); :} 
+            | selection_stmt 
+            {: System.out.println("DEBUG: Parsed selection statement"); :} 
+            | iteration_stmt 
+            {: System.out.println("DEBUG: Parsed iteration statement"); :} 
+            | return_stmt 
+            {: System.out.println("DEBUG: Parsed return statement"); :};
+
+expression_stmt ::= expression SCOLON 
+                  {: System.out.println("DEBUG: Parsed an expression statement"); :} 
+                  | SCOLON 
+                  {: System.out.println("DEBUG: Empty expression statement"); :};
+
+selection_stmt ::= IF LPAREN expression RPAREN statement 
+                 {: System.out.println("DEBUG: Parsed IF statement"); :} 
+                 | IF LPAREN expression RPAREN statement ELSE statement 
+                 {: System.out.println("DEBUG: Parsed IF-ELSE statement"); :};
+
+iteration_stmt ::= WHILE LPAREN expression RPAREN statement 
+                 {: System.out.println("DEBUG: Parsed WHILE loop"); :};
+
+return_stmt ::= RETURN SCOLON 
+              {: System.out.println("DEBUG: Parsed RETURN statement without expression"); :} 
+              | RETURN expression SCOLON 
+              {: System.out.println("DEBUG: Parsed RETURN statement with expression"); :};
+
+expression ::= var ASSIGN expression 
+             {: System.out.println("DEBUG: Assignment statement"); :} 
+             | simple_expression 
+             {: System.out.println("DEBUG: Simple expression"); :};
+
+var ::= ID 
+      {: System.out.println("DEBUG: Variable "); :} 
+      | ID LSQUARE expression RSQUARE 
+      {: System.out.println("DEBUG: Array access " ); :};
+
+simple_expression ::= additive_expression relop additive_expression 
+                     {: System.out.println("DEBUG: Relational expression"); :} 
+                     | additive_expression 
+                     {: System.out.println("DEBUG: Additive expression"); :};
+
+relop ::= LT 
+        {: System.out.println("DEBUG: Parsed < operator"); :} 
+        | LTE 
+        {: System.out.println("DEBUG: Parsed <= operator"); :} 
+        | GT 
+        {: System.out.println("DEBUG: Parsed > operator"); :} 
+        | GTE 
+        {: System.out.println("DEBUG: Parsed >= operator"); :} 
+        | EQ 
+        {: System.out.println("DEBUG: Parsed == operator"); :} 
+        | NEQ 
+        {: System.out.println("DEBUG: Parsed != operator"); :};
+
+additive_expression ::= additive_expression addop term 
+                       {: System.out.println("DEBUG: Additive expression"); :} 
+                       | term 
+                       {: System.out.println("DEBUG: Term expression"); :};
+
+addop ::= PLUS 
+        {: System.out.println("DEBUG: Parsed PLUS operator"); :} 
+        | MINUS 
+        {: System.out.println("DEBUG: Parsed MINUS operator"); :};
+
+term ::= term mulop signed_factor 
+       {: System.out.println("DEBUG: Parsed term"); :} 
+       | signed_factor 
+       {: System.out.println("DEBUG: Parsed signed factor"); :};
+
+mulop ::= TIMES 
+        {: System.out.println("DEBUG: Parsed TIMES operator"); :} 
+        | DIVIDE 
+        {: System.out.println("DEBUG: Parsed DIVIDE operator"); :};
+
+signed_factor ::= MINUS signed_factor %prec UMINUS 
+                | factor 
+                {: System.out.println("DEBUG: Parsed factor"); :};
+
+factor ::= LPAREN expression RPAREN 
+         {: System.out.println("DEBUG: Parenthesized expression"); :} 
+         | var 
+         {: System.out.println("DEBUG: Variable factor"); :} 
+         | call 
+         {: System.out.println("DEBUG: Function call factor"); :} 
+         | NUM 
+         {: System.out.println("DEBUG: Numeric constant "); :} 
+         | TRUTH 
+         {: System.out.println("DEBUG: Boolean constant "); :};
+
+call ::= ID LPAREN args RPAREN 
+       {: System.out.println("DEBUG: Function call: "); :};
+
+args ::= arg_list 
+       {: System.out.println("DEBUG: Arguments present"); :} 
+       | {: System.out.println("DEBUG: No arguments"); :};
+
+arg_list ::= arg_list COMMA expression 
+           {: System.out.println("DEBUG: Multiple function arguments"); :} 
+           | expression 
+           {: System.out.println("DEBUG: Single function argument"); :};
