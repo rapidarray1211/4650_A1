@@ -86,7 +86,7 @@ precedence left PLUS, MINUS;
 precedence left TIMES, DIVIDE;
 precedence right UMINUS;
 precedence nonassoc LOWER_THAN_ELSE;
-precedence nonassoc ELSE;
+precedence nonassoc ELSE, SEMI;
 
 /* Start symbol */
 start with program;
@@ -94,32 +94,47 @@ start with program;
 
 /* Grammar rules */
 
-program ::= declaration_list 
-          {: 
-             System.out.println("DEBUG [program]: Entered PROGRAM"); 
+program ::= declaration_list: d
+          {:
+            RESULT = d;
+            System.out.println("DEBUG [program]: Entered PROGRAM"); 
           :};
 
-declaration_list ::= declaration_list declaration 
+declaration_list ::= declaration_list: d1 declaration: d
                    {: 
+                     DecList dl = d1;
+                     while ( dl.tail != null )
+                        dl = dl.tail;
+                     dl.tail = new DecList(d, null);
+                     RESULT = d1;
                       System.out.println("DEBUG [declaration_list]: Adding declaration: " + 
                         ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
                    :} 
-                   | declaration 
+                   | declaration: d
                    {: 
+                      RESULT = new DecList(d, null);
                       System.out.println("DEBUG [declaration_list]: Single declaration processed: " + 
                         ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
                    :};
 
-declaration ::= var_declaration 
+declaration ::= var_declaration: vd
               {: 
-                 System.out.println("DEBUG [declaration]: Parsed var_declaration: " + 
+                  RESULT = vd;
+                  System.out.println("DEBUG [declaration]: Parsed var_declaration: " + 
                    ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
               :} 
-              | fun_declaration 
+              | fun_declaration: fd
               {: 
-                 System.out.println("DEBUG [declaration]: Parsed fun_declaration: " + 
+                  RESULT = fd;
+                  System.out.println("DEBUG [declaration]: Parsed fun_declaration: " + 
                    ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
-              :};
+              :}
+              | fun_prototype: fun_prototype
+              {:
+                  RESULT = fp;
+                  System.out.println("DEBUG [declaration]: Parsed fun_prototype: " + 
+                   ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+              };
 
 var_declaration ::= type_specifier ID SCOLON 
                   {: 
