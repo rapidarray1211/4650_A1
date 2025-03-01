@@ -136,67 +136,97 @@ declaration ::= var_declaration: vd
                    ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
               :};
 
-var_declaration ::= type_specifier ID SCOLON 
+var_declaration ::= type_specifier:t ID:i SCOLON 
                   {: 
-                     // RESULT = new 
+                     RESULT = new VarDec(t,i,null);
                      System.out.println("DEBUG [var_declaration]: Variable declaration: " + 
                        ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value); 
                   :} 
-                  | type_specifier ID LSQUARE NUM RSQUARE SCOLON 
+                  | type_specifier:t ID:i LSQUARE NUM:n RSQUARE SCOLON 
                   {: 
+                     RESULT = new VarDec(t,i,n);
                      System.out.println("DEBUG [var_declaration]: Array declaration: " + 
                      ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value + 
                      "[" + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value + "]"); 
                   :};
-fun_declaration ::= type_specifier ID LPAREN params RPAREN compound_stmt 
+fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:cs 
                   {: 
+                     RESULT = new FunDec(t,i,p,cs)
                      System.out.println("DEBUG [fun_declaration]: Function declared: " + 
                        ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value); 
                   :};
 
-fun_prototype ::= type_specifier ID LPAREN params RPAREN SCOLON
+fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN SCOLON
                   {:
+                     RESULT = new FunDec(t,i,p,null)
                      System.out.println("DEBUG [fun_prototype]: Function prototype: ");
                   :};
 
-type_specifier ::= BOOL 
-                 {: System.out.println("DEBUG [type_specifier]: Type BOOL"); :} 
+type_specifier ::= BOOL
+                 {: 
+                     RESULT = new Type(1);
+                     System.out.println("DEBUG [type_specifier]: Type BOOL"); :} 
                  | INT 
-                 {: System.out.println("DEBUG [type_specifier]: Type INT"); :} 
+                 {:  RESULT = new Type(2);
+                     System.out.println("DEBUG [type_specifier]: Type INT"); :} 
                  | VOID 
-                 {: System.out.println("DEBUG [type_specifier]: Type VOID"); :};
+                 {:  RESULT = new Type(0);
+                     System.out.println("DEBUG [type_specifier]: Type VOID"); :};
 
-params ::= param_list 
-         {: System.out.println("DEBUG [params]: Parsed parameters: " + 
+// Implement Param list as a linked list
+params ::= param_list:pl 
+         {: RESULT = new Params(pl);
+            System.out.println("DEBUG [params]: Parsed parameters: " + 
            ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); :} 
          | VOID 
-         {: System.out.println("DEBUG [params]: Void parameter list"); :};
+         {: RESULT = new Params(null);
+            System.out.println("DEBUG [params]: Void parameter list"); :};
 
-param_list ::= param_list COMMA param 
-             {: System.out.println("DEBUG [param_list]: Multiple parameters: " + 
+param_list ::= param_list:pl COMMA param:p
+             {: /* Add to p to tail of pl*/
+               ParamList t = pl;
+               while( t.tail != null )
+                  t = t.tail;
+               t.tail = new ParamList(p,null);
+               RESULT = pl;
+               System.out.println("DEBUG [param_list]: Multiple parameters: " + 
                ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); :} 
-             | param 
-             {: System.out.println("DEBUG [param_list]: Single parameter: " + 
+             | param:p 
+             {: RESULT = new ParamList(p,null); /*Create new ParamList with p as head*/
+               System.out.println("DEBUG [param_list]: Single parameter: " + 
                ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); :};
 
-
-param ::= type_specifier ID 
-        {: 
+//The third values in Param() indicates if it is array or not
+param ::= type_specifier:t ID:i
+        {: RESULT = new Param(t,i,false);
            System.out.println("DEBUG [param]: Parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
         :} 
-        | type_specifier ID LSQUARE RSQUARE 
-        {: 
+        | type_specifier:t ID:i LSQUARE RSQUARE 
+        {: RESULT = new Param(t,i,true);
            System.out.println("DEBUG [param]: Array parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value); 
         :};
 
-compound_stmt ::= LCURLY local_declarations statement_list RCURLY 
-                {: System.out.println("DEBUG [compound_stmt]: Entered compound statement"); :};
+compound_stmt ::= LCURLY local_declarations:ld statement_list:sl RCURLY 
+                {:RESULT = new CmpdStat(ld,sl);
+                  System.out.println("DEBUG [compound_stmt]: Entered compound statement"); :};
 
-local_declarations ::= local_declarations var_declaration 
-                     {: System.out.println("DEBUG [local_declarations]: Local variable declaration"); :} 
-                     | {: System.out.println("DEBUG [local_declarations]: No local declarations"); :};
+/*LocDecl is als a list*/
+local_declarations ::= local_declarations:ld SCOLON var_declaration:vd
+                     {: /*Add vd to tail of ld*/
+                        LocDecls t = ld;
+                        while( t.tail != null )
+                           t = t.tail;
+                           t.tail = new LocDecls(vd,null);
+                        RESULT = ld; 
+                        System.out.println("DEBUG [local_declarations]: Local variable declaration"); :} 
+                     | var_declaration:vd
+                     {: RESULT = new LocDecls(vd,null); /*Create new Local decleaion list with vd as head*/
+                        System.out.println("DEBUG [local_declarations]: Create Local Declerations");
+                     :}
+                     | {: RESULT = new LocDecl(); /*Empty*/
+                        System.out.println("DEBUG [local_declarations]: No local declarations"); :};
 
-statement_list ::= statement_list statement 
+statement_list ::= statement_list SCOLON statement 
                  {: System.out.println("DEBUG[statement_list]: Added statement"); :} 
                  | {: System.out.println("DEBUG[statement_list]: No statements in list"); :};
 
