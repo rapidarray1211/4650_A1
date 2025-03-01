@@ -72,7 +72,7 @@ terminal TRUTH, ID, NUM;
 terminal ERR;
 
 /* Define nonterminal tokens */
-non terminal program, declaration_list, declaration, var_declaration, fun_declaration, type_specifier;
+non terminal program, declaration_list, declaration, var_declaration, fun_declaration, type_specifier, fun_prototype;
 non terminal params, param_list, param, compound_stmt, local_declarations, statement_list, statement;
 non terminal expression_stmt, selection_stmt, iteration_stmt, return_stmt, expression, var, simple_expression;
 non terminal relop, additive_expression, addop, term, mulop, signed_factor, factor, call, args, arg_list;
@@ -86,7 +86,7 @@ precedence left PLUS, MINUS;
 precedence left TIMES, DIVIDE;
 precedence right UMINUS;
 precedence nonassoc LOWER_THAN_ELSE;
-precedence nonassoc ELSE, SEMI;
+precedence nonassoc ELSE;
 
 /* Start symbol */
 start with program;
@@ -134,11 +134,11 @@ declaration ::= var_declaration: vd
                   RESULT = fp;
                   System.out.println("DEBUG [declaration]: Parsed fun_prototype: " + 
                    ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
-              };
+              :};
 
 var_declaration ::= type_specifier ID SCOLON 
                   {: 
-                     RESULT = new 
+                     // RESULT = new 
                      System.out.println("DEBUG [var_declaration]: Variable declaration: " + 
                        ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value); 
                   :} 
@@ -154,10 +154,10 @@ fun_declaration ::= type_specifier ID LPAREN params RPAREN compound_stmt
                        ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value); 
                   :};
 
-funPrototype ::= type_specifier ID LPAREN params RPAREN SCOLON
+fun_prototype ::= type_specifier ID LPAREN params RPAREN SCOLON
                   {:
-                     System.out.println("DEBUG [fun_prototype]: Function prototype);
-                  }
+                     System.out.println("DEBUG [fun_prototype]: Function prototype: ");
+                  :};
 
 type_specifier ::= BOOL 
                  {: System.out.println("DEBUG [type_specifier]: Type BOOL"); :} 

@@ -46,6 +46,9 @@ LineTerminator = \r|\n|\r\n
 /* White space is a line terminator, space, tab, or form feed. */
 WhiteSpace     = {LineTerminator} | [ \t\f]
    
+/* Definitions for ID, NUM, COMMENT, and TRUTH. ID is any alphanumeric word starting with
+   a character. NUM is any integer, TRUTH is either true or false. COMMENT refers 
+   anything between /* and */ */
 
 ID = [_a-zA-Z][_a-zA-Z0-9]*
 NUM = [0-9]+
