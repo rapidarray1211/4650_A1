@@ -138,6 +138,7 @@ declaration ::= var_declaration: vd
 
 var_declaration ::= type_specifier ID SCOLON 
                   {: 
+                     RESULT = new 
                      System.out.println("DEBUG [var_declaration]: Variable declaration: " + 
                        ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value); 
                   :} 
@@ -152,6 +153,11 @@ fun_declaration ::= type_specifier ID LPAREN params RPAREN compound_stmt
                      System.out.println("DEBUG [fun_declaration]: Function declared: " + 
                        ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value); 
                   :};
+
+funPrototype ::= type_specifier ID LPAREN params RPAREN SCOLON
+                  {:
+                     System.out.println("DEBUG [fun_prototype]: Function prototype);
+                  }
 
 type_specifier ::= BOOL 
                  {: System.out.println("DEBUG [type_specifier]: Type BOOL"); :} 
