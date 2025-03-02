@@ -1,16 +1,11 @@
 package absyn;
-
-public class ArrayDec extends VarDec{
+public class SimpleVar extends Var{
     public String name;
-    public int size;
-    public NameTy type;
 
-    public ArrayDec ( int row, int col, Type type, String name, int size ) {
+    public SimpleVar ( int row, int col, String name ) {
         this.row = row;
         this.col = col;
-        this.type = type;
         this.name = name;
-        this.size = size;
     }
 
     public void accept( AbsynVisitor visitor, int level ) {
