@@ -144,21 +144,21 @@ var_declaration ::= type_specifier:t ID:i SCOLON
                   :} 
                   | type_specifier:t ID:i LSQUARE NUM:n RSQUARE SCOLON 
                   {: 
-                     RESULT = new VarDec(t,i,n);
+                     RESULT = new ArrayDec(t,i,n);
                      System.out.println("DEBUG [var_declaration]: Array declaration: " + 
                      ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value + 
                      "[" + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value + "]"); 
                   :};
 fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:cs 
                   {: 
-                     RESULT = new FunDec(t,i,p,cs)
+                     RESULT = new FunDec(t,i,p,cs);
                      System.out.println("DEBUG [fun_declaration]: Function declared: " + 
                        ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value); 
                   :};
 
 fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN SCOLON
                   {:
-                     RESULT = new FunDec(t,i,p,null)
+                     RESULT = new FunDec(t,i,p,null);
                      System.out.println("DEBUG [fun_prototype]: Function prototype: ");
                   :};
 
