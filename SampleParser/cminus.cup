@@ -129,7 +129,7 @@ declaration ::= var_declaration: vd
                   System.out.println("DEBUG [declaration]: Parsed fun_declaration: " + 
                    ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
               :}
-              | fun_prototype: fun_prototype
+              | fun_prototype: fp
               {:
                   RESULT = fp;
                   System.out.println("DEBUG [declaration]: Parsed fun_prototype: " + 
@@ -198,11 +198,11 @@ param_list ::= param_list:pl COMMA param:p
 
 //The third values in Param() indicates if it is array or not
 param ::= type_specifier:t ID:i
-        {: RESULT = new Param(t,i,false);
+        {: RESULT = new Param(t,i);
            System.out.println("DEBUG [param]: Parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
         :} 
         | type_specifier:t ID:i LSQUARE RSQUARE 
-        {: RESULT = new Param(t,i,true);
+        {: RESULT = new ParamArr(t,i,null);
            System.out.println("DEBUG [param]: Array parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value); 
         :};
 
