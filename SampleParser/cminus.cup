@@ -210,8 +210,8 @@ compound_stmt ::= LCURLY local_declarations:ld statement_list:sl RCURLY
                 {:RESULT = new CmpdStat(ld,sl);
                   System.out.println("DEBUG [compound_stmt]: Entered compound statement"); :};
 
-/*LocDecl is als a list*/
-local_declarations ::= local_declarations:ld SCOLON var_declaration:vd
+/*LocDecl is also a list*/
+local_declarations ::= local_declarations:ld var_declaration:vd
                      {: /*Add vd to tail of ld*/
                         LocDecls t = ld;
                         while( t.tail != null )
@@ -219,50 +219,65 @@ local_declarations ::= local_declarations:ld SCOLON var_declaration:vd
                            t.tail = new LocDecls(vd,null);
                         RESULT = ld; 
                         System.out.println("DEBUG [local_declarations]: Local variable declaration"); :} 
-                     | var_declaration:vd
-                     {: RESULT = new LocDecls(vd,null); /*Create new Local decleaion list with vd as head*/
-                        System.out.println("DEBUG [local_declarations]: Create Local Declerations");
-                     :}
-                     | {: RESULT = new LocDecl(); /*Empty*/
+                     | {: RESULT = new LocDecls(null,null); /*Empty list*/
                         System.out.println("DEBUG [local_declarations]: No local declarations"); :};
 
-statement_list ::= statement_list SCOLON statement 
-                 {: System.out.println("DEBUG[statement_list]: Added statement"); :} 
-                 | {: System.out.println("DEBUG[statement_list]: No statements in list"); :};
+statement_list ::= statement_list:sl statement:s
+                 {: /*Add vstatement to tail of sl*/
+                     LocDecls t = sl;
+                     while( t.tail != null )
+                        t = t.tail;
+                        t.tail = new StatList(s,null);
+                     RESULT = sl; 
+                     System.out.println("DEBUG[statement_list]: Added statement"); :} 
+                 |{: RESULT = new StatList(null,null); /*Empty list*/
+                     System.out.println("DEBUG[statement_list]: No statements in list"); :};
 
-statement ::= expression_stmt 
-            {: System.out.println("DEBUG[statement]: Parsed expression statement"); :} 
-            | compound_stmt 
-            {: System.out.println("DEBUG[statement]: Parsed compound statement"); :} 
-            | selection_stmt 
-            {: System.out.println("DEBUG[statement]: Parsed selection statement"); :} 
-            | iteration_stmt 
-            {: System.out.println("DEBUG[statement]: Parsed iteration statement"); :} 
-            | return_stmt 
-            {: System.out.println("DEBUG[statement]: Parsed return statement"); :};
+statement ::= expression_stmt:es 
+            {: RESULT = es;
+               System.out.println("DEBUG[statement]: Parsed expression statement"); :} 
+            | compound_stmt:cs
+            {: RESULT = cs;
+               System.out.println("DEBUG[statement]: Parsed compound statement"); :} 
+            | selection_stmt:ss 
+            {: RESULT = ss;
+               System.out.println("DEBUG[statement]: Parsed selection statement"); :} 
+            | iteration_stmt:is 
+            {: RESULT = is;
+               System.out.println("DEBUG[statement]: Parsed iteration statement"); :} 
+            | return_stmt:rs
+            {: RESULT = rs;
+               System.out.println("DEBUG[statement]: Parsed return statement"); :};
 
-expression_stmt ::= expression SCOLON 
-                  {: System.out.println("DEBUG[expression_stmt]: Parsed an expression statement"); :} 
+expression_stmt ::= expression:e SCOLON 
+                  {: RESULT = e;
+                     System.out.println("DEBUG[expression_stmt]: Parsed an expression statement"); :} 
                   | SCOLON 
-                  {: System.out.println("DEBUG[expression_stmt]: Empty expression statement"); :};
+                  {: RESULT = null;
+                  System.out.println("DEBUG[expression_stmt]: Empty expression statement"); :};
 
-selection_stmt ::= IF LPAREN expression RPAREN statement 
-                 {: System.out.println("DEBUG: Parsed IF statement"); :} 
-                 | IF LPAREN expression RPAREN statement ELSE statement 
-                 {: System.out.println("DEBUG: Parsed IF-ELSE statement"); :};
+selection_stmt ::= IF LPAREN expression:e RPAREN statement:s 
+                 {: RESULT = new SelStmt(e,s,null);
+                  System.out.println("DEBUG: Parsed IF statement"); :} 
+                 | IF LPAREN expression:e RPAREN statement:s1 ELSE statement:s2
+                 {: RESULT = new SelStmt(e,s1,s2);
+                  System.out.println("DEBUG: Parsed IF-ELSE statement"); :};
 
-iteration_stmt ::= WHILE LPAREN expression RPAREN statement 
-                 {: System.out.println("DEBUG [iteration_stmt]: Parsed WHILE loop"); :};
+iteration_stmt ::= WHILE LPAREN expression:e RPAREN statement:s 
+                 {: RESULT = new IterStmt(e,s);
+                  System.out.println("DEBUG [iteration_stmt]: Parsed WHILE loop"); :};
 
 return_stmt ::= RETURN SCOLON 
-              {: System.out.println("DEBUG [return_stmt]: Parsed RETURN statement without expression"); :} 
-              | RETURN expression SCOLON 
-              {: System.out.println("DEBUG [return_stmt]: Parsed RETURN statement with expression: " + 
+              {: RESULT = new RetStmt(null);
+               System.out.println("DEBUG [return_stmt]: Parsed RETURN statement without expression"); :} 
+              | RETURN expression:e SCOLON 
+              {: RESULT = new RetStmt(e);
+               System.out.println("DEBUG [return_stmt]: Parsed RETURN statement with expression: " + 
                 ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value); :};
 
-expression ::= var ASSIGN expression 
+expression ::= var:v ASSIGN expression:e
              {: System.out.println("DEBUG [expressions]: Assignment statement"); :} 
-             | simple_expression 
+             | simple_expression:se 
              {: System.out.println("DEBUG [expression]: Simple expression"); :};
 
 var ::= ID 
