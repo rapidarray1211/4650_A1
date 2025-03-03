@@ -1,0 +1,17 @@
+/*File 3: 
+Error: Open comment in line 10
+*/
+
+
+int globalVar;
+
+void initializeArray(int arr[], int size) {
+    int i;
+    i = 0;
+    /*
+    while (i < size) {
+        arr[i] = i+2;
+        i = i + 1;
+    }
+    
+}

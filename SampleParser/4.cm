@@ -1,0 +1,18 @@
+/* File 4:
+Error 1: In function prototype, there is a number in between the brackets in array Decleartion
+Error 2: Missing semi colon after int i*/
+
+
+void initializeArray(int arr[7], int size);
+void printResult(int num, bool check);
+
+int globalVar;
+
+void initializeArray(int arr[], int size) {
+    int i
+    i = 0;
+    while (i < size) {
+        arr[i] = i+2;
+        i = i + 1;
+    }
+}
