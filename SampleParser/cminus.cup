@@ -145,7 +145,7 @@ var_declaration ::= type_specifier:t ID:i SCOLON
                   :} 
                   | type_specifier:t ID:i LSQUARE NUM:n RSQUARE SCOLON 
                   {: 
-                     RESULT = new ArrayDec(tleft,tright,(NameTy) t,(String) i,(int) n);
+                     RESULT = new ArrayDec(tleft, tright, (NameTy) t, (String) i, Integer.parseInt((String) n));
                      // System.out.println("DEBUG [var_declaration]: Array declaration: " + 
                      // ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value + 
                      // "[" + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value + "]"); 
@@ -303,7 +303,7 @@ return_stmt ::= RETURN:r SCOLON
                :};
 
 expression ::= var:v ASSIGN expression:e
-             {: RESULT = new AssignExp(vleft, vright, (VarExp) v, (Exp) e);
+             {: RESULT = new AssignExp(vleft, vright, new VarExp(vleft, vright, (Var) v), (Exp) e);
                //System.out.println("DEBUG [expressions]: Assignment statement"); 
             :} 
              | obool_expression:ob 
@@ -312,7 +312,7 @@ expression ::= var:v ASSIGN expression:e
             :};
 
 var ::= ID:i 
-      {: RESULT = new VarExp(ileft, iright, (String) i);
+      {: RESULT = new SimpleVar(ileft, iright, (String) i);
         // System.out.println("DEBUG [var]: Variable ");
         :} 
       | ID:i LSQUARE expression:e RSQUARE 
@@ -432,7 +432,7 @@ factor ::= LPAREN expression:e RPAREN
             //System.out.println("DEBUG [factor]: Parenthesized expression"); 
             :} 
          | var:v
-         {: RESULT = v;
+         {: RESULT = new VarExp(vleft, vright, (Var) v);
             //System.out.println("DEBUG [factor]: Variable factor"); 
             :} 
          | call:c
