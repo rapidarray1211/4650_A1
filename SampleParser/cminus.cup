@@ -149,12 +149,29 @@ var_declaration ::= type_specifier:t ID:i SCOLON
                      // System.out.println("DEBUG [var_declaration]: Array declaration: " + 
                      // ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value + 
                      // "[" + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value + "]"); 
+                  :}
+                  | type_specifier:t ID:i RSQUARE error:e SCOLON
+                  {:
+                     parser.report_error("Invalid array at line " + (eleft + 1) + " and column " + (eright+1) + ". Need left bracket", e);
+                     RESULT = new SimpleDec(tleft, tright, (NameTy) t, (String) i);
+                  :}
+                  | type_specifier:t ID:i LSQUARE NUM:n error:e SCOLON
+                  {:
+                     parser.report_error("Invalid array at line " + (eleft + 1) + " and column " + (eright+1) + ". Need right bracket", e);
+                     RESULT = new ArrayDec(tleft, tright, (NameTy) t, (String) i, Integer.parseInt((String) n));
                   :};
+
+
 fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:cs 
                   {: 
                      RESULT = new FunctionDec(tleft,tright,(NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
                      // System.out.println("DEBUG [fun_declaration]: Function declared: " + 
                      //   ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value); 
+                  :}
+                  | type_specifier:t ID:i error:e params:p RPAREN compound_stmt:cs
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing left paranthesis at line " + (eleft + 1) + " and column " + (eright + 1), e); 
                   :};
 
 fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN:r SCOLON
@@ -205,7 +222,6 @@ param_list ::= param_list:pl COMMA param:p
                // ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
             :};
 
-//The third values in Param() indicates if it is array or not
 param ::= type_specifier:t ID:i
         {: RESULT = new SimpleDec(tleft,tright,(NameTy) t,(String) i);
          //   System.out.println("DEBUG [param]: Parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 

@@ -28,12 +28,12 @@ import java_cup.runtime.*;
 %{   
 
     private Symbol symbol(int type) {
-        System.out.println("Scanned Token: " + sym.terminalNames[type]);
+        //System.out.println("Scanned Token: " + sym.terminalNames[type]);
         return new Symbol(type, yyline, yycolumn);
     }
     
     private Symbol symbol(int type, Object value) {
-        System.out.println("Scanned Token: " + sym.terminalNames[type] + " | Val: " + value);
+        //System.out.println("Scanned Token: " + sym.terminalNames[type] + " | Val: " + value);
         return new Symbol(type, yyline, yycolumn, value);
     }
 %}
