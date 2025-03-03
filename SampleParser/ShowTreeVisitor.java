@@ -10,8 +10,13 @@ public class ShowTreeVisitor implements AbsynVisitor {
 
   public void visit( ExpList expList, int level ) {
     while( expList != null ) {
-      expList.head.accept( this, level );
-      expList = expList.tail;
+      if (expList.head != null) {
+        expList.head.accept( this, level );
+        expList = expList.tail;
+      }
+      else {
+        break;
+      }
     } 
   }
 
@@ -80,15 +85,24 @@ public class ShowTreeVisitor implements AbsynVisitor {
   public void visit( ReadExp exp, int level ) {
     indent( level );
     System.out.println( "ReadExp:" );
+    level++;
     exp.input.accept( this, ++level );
+    if (exp.input != null) {
+      exp.input.accept(this, level);
+    }
   }
 
   public void visit( RepeatExp exp, int level ) {
     indent( level );
     System.out.println( "RepeatExp:" );
     level++;
-    exp.exps.accept( this, level );
-    exp.test.accept( this, level ); 
+    ExpList exps = exp.exps;
+    if (exps != null) {
+      exps.accept(this, level);
+    }
+    if (exp.test != null) {
+      exp.test.accept(this, level);
+    }
   }
 
   public void visit( VarExp exp, int level ) {
@@ -181,48 +195,69 @@ public class ShowTreeVisitor implements AbsynVisitor {
     indent(level);
     level++;
     System.out.println("IndexVar");
+    exp.index.accept(this, level);
   }
 
   public void visit( NameTy exp, int level ) {
-    indent(level);
-    level++;
-    System.out.println("NameTy");
+    // switch (exp.type) {
+    //   case 0:
+    //     System.out.print("BOOLEAN ");
+    //   case 1:
+    //     System.out.print("INT ");
+    //   case 2:
+    //     System.out.print("VOID ");
+    //   case 3:
+    //     System.out.print("NULL ");
+    // }
   }
 
   public void visit( SimpleDec exp, int level ) {
     indent(level);
     level++;
-    System.out.println("SimpleDec");
+    System.out.println("SimpleDec: TYPE: " + exp.type.type);
+    exp.type.accept(this, level);
   }
 
   public void visit( SimpleVar exp, int level ) {
     indent(level);
     level++;
-    System.out.println("SimpleVar");
+    System.out.println("SimpleVar: " + exp.name);
   }
 
   public void visit( VarDecList exp, int level ) {
-    indent(level);
-    level++;
-    System.out.println("VarDecList");
+    while( exp != null ) {
+      if (exp.head != null) {
+        exp.head.accept( this, level );
+        exp = exp.tail;
+      }
+    } 
   }
 
   public void visit( WhileExp exp, int level ) {
     indent(level);
     level++;
     System.out.println("WhileExp");
+    if (exp.test != null) {
+      exp.test.accept(this, level);
+    }
+    if (exp.body != null) {
+      exp.body.accept(this, level);
+    }
   }
 
   public void visit( NilExp exp, int level ) {
     indent(level);
-    level++;
+    // level++;
     System.out.println("NiLExp");
   }
 
   public void visit( CallExp exp, int level ) {
     indent(level);
     level++;
-    System.out.println("CallExp");
+    System.out.println("CallExp: " + exp.func);
+    if (exp.args != null) {
+      exp.args.accept(this, level);
+    }
   }
 
   public void visit( ReturnExp exp, int level) { 
