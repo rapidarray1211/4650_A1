@@ -57,7 +57,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
       case OpExp.TIMES:
         System.out.println( " * " );
         break;
-      case OpExp.OVER:
+      case OpExp.DIVIDE:
         System.out.println( " / " );
         break;
       case OpExp.EQ:
@@ -214,7 +214,6 @@ public class ShowTreeVisitor implements AbsynVisitor {
     indent(level);
     level++;
     System.out.println("SimpleDec: " + exp.name);
-    level++;
     indent(level);
     exp.type.accept(this, level);
   }
