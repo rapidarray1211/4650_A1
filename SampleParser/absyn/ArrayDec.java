@@ -5,7 +5,7 @@ public class ArrayDec extends VarDec{
     public int size;
     public NameTy type;
 
-    public ArrayDec ( int row, int col, Type type, String name, int size ) {
+    public ArrayDec ( int row, int col, NameTy type, String name, int size ) {
         this.row = row;
         this.col = col;
         this.type = type;
@@ -14,6 +14,6 @@ public class ArrayDec extends VarDec{
     }
 
     public void accept( AbsynVisitor visitor, int level ) {
-        visitor.visit( this, level );
+        // visitor.visit( this, level );
     }
 }

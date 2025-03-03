@@ -103,17 +103,17 @@ program ::= declaration_list: d
 
 declaration_list ::= declaration_list: d1 declaration: d
                    {: 
-                     DecList dl = d1;
+                     DecList dl = (DecList) d1;
                      while ( dl.tail != null )
                         dl = dl.tail;
-                     dl.tail = new DecList(d, null);
+                     dl.tail = new DecList((Dec) d, null);
                      RESULT = d1;
                       System.out.println("DEBUG [declaration_list]: Adding declaration: " + 
                         ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
                    :} 
                    | declaration: d
                    {: 
-                      RESULT = new DecList(d, null);
+                      RESULT = new DecList((Dec)d, null);
                       System.out.println("DEBUG [declaration_list]: Single declaration processed: " + 
                         ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
                    :};
@@ -139,39 +139,40 @@ declaration ::= var_declaration: vd
 
 var_declaration ::= type_specifier:t ID:i SCOLON 
                   {: 
-                     RESULT = new SimpleDec(tleft,tright,t,i,null);
+                     RESULT = new SimpleDec(tleft,tright,(NameTy) t, (String) i);
                      System.out.println("DEBUG [var_declaration]: Variable declaration: " + 
                        ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value); 
                   :} 
                   | type_specifier:t ID:i LSQUARE NUM:n RSQUARE SCOLON 
                   {: 
-                     RESULT = new ArrayDec(tleft,tright,t,i,n);
+                     RESULT = new ArrayDec(tleft,tright,(NameTy) t,(String) i,(int) n);
                      System.out.println("DEBUG [var_declaration]: Array declaration: " + 
                      ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value + 
                      "[" + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value + "]"); 
                   :};
 fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:cs 
                   {: 
-                     RESULT = new FunctionDec(tleft,tright,t,i,p,cs);
+                     RESULT = new FunctionDec(tleft,tright,(NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
                      System.out.println("DEBUG [fun_declaration]: Function declared: " + 
                        ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value); 
                   :};
 
 fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN:r SCOLON
                   {:
-                     RESULT = new FunctionDec(tleft,tright,t,i,p,new NilExp(rleft,rright));
+                     RESULT = new FunctionDec(tleft,tright, (NameTy) t,(String) i, (VarDecList) p, new NilExp(rleft,rright));
                      System.out.println("DEBUG [fun_prototype]: Function prototype: ");
                   :};
 
-type_specifier ::= BOOL
+type_specifier ::= BOOL:b
                  {: 
-                     RESULT = NameTy.Bool;
+                     RESULT = new NameTy(bleft, bright, NameTy.BOOL);
                      System.out.println("DEBUG [type_specifier]: Type BOOL"); :} 
-                 | INT 
-                 {:  RESULT = NameTy.Int;
+                 | INT: i
+                 {:
+                     RESULT = new NameTy(ileft, iright, NameTy.INT);
                      System.out.println("DEBUG [type_specifier]: Type INT"); :} 
-                 | VOID 
-                 {:  RESULT = NameTy.Void;
+                 | VOID: v 
+                 {:  RESULT = new NameTy(vleft, vright, NameTy.VOID);
                      System.out.println("DEBUG [type_specifier]: Type VOID"); :};
 
 // Implement Param list as a linked list
@@ -185,39 +186,39 @@ params ::= param_list:pl
 
 param_list ::= param_list:pl COMMA param:p
              {: /* Add to p to tail of pl*/
-               ParamList t = pl;
+               VarDecList t = (VarDecList) pl;
                while( t.tail != null )
                   t = t.tail;
-               t.tail = new VarDecList(p,null);
+               t.tail = new VarDecList((VarDec)p,null);
                RESULT = pl;
                System.out.println("DEBUG [param_list]: Multiple parameters: " + 
                ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); :} 
              | param:p 
-             {: RESULT = new VarDecList(p,null); /*Create new ParamList with p as head*/
+             {: RESULT = new VarDecList((VarDec)p,null); /*Create new ParamList with p as head*/
                System.out.println("DEBUG [param_list]: Single parameter: " + 
                ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); :};
 
 //The third values in Param() indicates if it is array or not
 param ::= type_specifier:t ID:i
-        {: RESULT = new SimpleDec(tleft,tright,t,i);
+        {: RESULT = new SimpleDec(tleft,tright,(NameTy) t,(String) i);
            System.out.println("DEBUG [param]: Parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
         :} 
         | type_specifier:t ID:i LSQUARE RSQUARE 
-        {: RESULT = new ArrayDec(tleft,tright,t,i,null);
+        {: RESULT = new ArrayDec(tleft,tright,(NameTy) t,(String) i,0);
            System.out.println("DEBUG [param]: Array parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value); 
         :};
 
 compound_stmt ::= LCURLY local_declarations:ld statement_list:sl RCURLY 
-                {:RESULT = new CompoundExp(ldleft,ldright,ld,sl);
+                {:RESULT = new CompoundExp(ldleft,ldright,(VarDecList) ld,(ExpList) sl);
                   System.out.println("DEBUG [compound_stmt]: Entered compound statement"); :};
 
 /*LocDecl is also a list*/
 local_declarations ::= local_declarations:ld var_declaration:vd
                      {: /*Add vd to tail of ld*/
-                        LocDecls t = ld;
+                        VarDecList t = (VarDecList) ld;
                         while( t.tail != null )
                            t = t.tail;
-                           t.tail = new VarDecList(vd,null);
+                           t.tail = new VarDecList((VarDec)vd,null);
                         RESULT = ld; 
                         System.out.println("DEBUG [local_declarations]: Local variable declaration"); :} 
                      | {: RESULT = new VarDecList(null,null); /*Empty list*/
@@ -225,10 +226,10 @@ local_declarations ::= local_declarations:ld var_declaration:vd
 
 statement_list ::= statement_list:sl statement:s
                  {: /*Add vstatement to tail of sl*/
-                     LocDecls t = sl;
+                     ExpList t = (ExpList) sl;
                      while( t.tail != null )
                         t = t.tail;
-                        t.tail = new ExpList(s,null);
+                        t.tail = new ExpList((Exp)s,null);
                      RESULT = sl; 
                      System.out.println("DEBUG[statement_list]: Added statement"); :} 
                  |{: RESULT = new ExpList(null,null); /*Empty list*/
@@ -258,61 +259,61 @@ expression_stmt ::= expression:e SCOLON
                   System.out.println("DEBUG[expression_stmt]: Empty expression statement"); :};
 
 selection_stmt ::= IF:i LPAREN expression:e RPAREN statement:s 
-                 {: RESULT = new IfExp(ileft,irgiht,e,s,new NilExp(sleft,sright));
+                 {: RESULT = new IfExp(ileft, iright, (Exp) e, (ExpList) s, null);
                   System.out.println("DEBUG: Parsed IF statement"); :} 
                  | IF:i LPAREN expression:e RPAREN statement:s1 ELSE statement:s2
-                 {: RESULT = new IfExp(ileft,iright,e,s1,s2);
+                 {: RESULT = new IfExp(ileft, iright, (Exp) e, (ExpList) s1, (ExpList) s2);
                   System.out.println("DEBUG: Parsed IF-ELSE statement"); :};
 
 iteration_stmt ::= WHILE:w LPAREN expression:e RPAREN statement:s 
-                 {: RESULT = new WhileExp(wleft,wright,e,s);
+                 {: RESULT = new WhileExp(wleft, wright, (Exp) e, (Exp) s);
                   System.out.println("DEBUG [iteration_stmt]: Parsed WHILE loop"); :};
 
 return_stmt ::= RETURN:r SCOLON 
               {: RESULT = new ReturnExp(rleft,rright,new NilExp(rleft,rright));
                System.out.println("DEBUG [return_stmt]: Parsed RETURN statement without expression"); :} 
               | RETURN:r expression:e SCOLON 
-              {: RESULT = new ReturnExp(rleft,rright,e);
+              {: RESULT = new ReturnExp(rleft, rright, (Exp) e);
                System.out.println("DEBUG [return_stmt]: Parsed RETURN statement with expression: " + 
                 ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value); :};
 
 expression ::= var:v ASSIGN expression:e
-             {: RESULT = new AssignExp(vleft,vright,v,e);
+             {: RESULT = new AssignExp(vleft, vright, (VarExp) v, (Exp) e);
                System.out.println("DEBUG [expressions]: Assignment statement"); :} 
              | obool_expression:ob 
              {: RESULT = ob;
                System.out.println("DEBUG [expression]: Simple expression"); :};
 
 var ::= ID:i 
-      {: RESULT = new VarExp(ileft,iright,i);
+      {: RESULT = new VarExp(ileft, iright, (String) i);
          System.out.println("DEBUG [var]: Variable "); :} 
       | ID:i LSQUARE expression:e RSQUARE 
-      {: RESULT = new VarArrExp(ileft,iright,i,e);
+      {: RESULT = new IndexVar(ileft, iright, (String) i, (Exp) e);
          System.out.println("DEBUG [var]: Array access " ); :};
 
 obool_expression ::= obool_expression:o OR abool_expression:a
-                     {: RESULT = new OpExp(oleft,oright,o,OpExp.OR,e);
+                     {: RESULT = new OpExp(oleft,oright,(Exp)o,OpExp.OR,(Exp)a);
                         System.out.println("DEBUG [expressions]: OR statement"); :}
                      | abool_expression:a
                      {: RESULT = a;
                         System.out.println("DEBUG [expressions]: abool in OR statement"); :};
                
 abool_expression ::= abool_expression:a AND ubool_expression:u
-                     {: RESULT = new OpExp(aleft,aright,a,OpExp.AND,u);
+                     {: RESULT = new OpExp(aleft,aright,(Exp)a,OpExp.AND,(Exp)u);
                         System.out.println("DEBUG [expressions]: AND statement"); :}
                      | ubool_expression:u
                      {: RESULT = u;
                         System.out.println("DEBUG [expressions]: ubool in AND statement"); :};
 
 ubool_expression ::= TILDE ubool_expression:b
-                     {: RESULT = new OpExp(bleft,bright,new NilExp(bleft,bright),OpExp.NOT,b);
+                     {: RESULT = new OpExp(bleft,bright,new NilExp(bleft,bright),OpExp.NOT,(Exp)b);
                         System.out.println("DEBUG [expressions]: NOT statement"); :}
                      | simple_expression:s
                      {: RESULT = s;
                         System.out.println("DEBUG [expressions]: simple expression in NOT statement"); :};
 
 simple_expression ::= additive_expression:a1 relop:r additive_expression:a2 
-                     {: RESULT = new OpExp(a1left,a1right,a1,r,a2);
+                     {: RESULT = new OpExp(a1left,a1right,(Exp)a1, (int)r, (Exp)a2);
                         System.out.println("DEBUG [simple_expression]: Relational expression"); :} 
                      | additive_expression:a
                      {: RESULT = a;
@@ -338,7 +339,7 @@ relop ::= LT
          System.out.println("DEBUG [relop]: Parsed != operator"); :};
 
 additive_expression ::= additive_expression:e addop:a term:t 
-                       {: RESULT = new OpExp(eleft,eright,e,a,t);
+                       {: RESULT = new OpExp(eleft,eright,(Exp)e, (int)a, (Exp)t);
                         System.out.println("DEBUG [additive_expression]: Additive expression"); :} 
                        | term:t 
                        {: RESULT = t;
@@ -353,7 +354,7 @@ addop ::= PLUS
         System.out.println("DEBUG [addop]: Parsed MINUS operator"); :};
 
 term ::= term:t mulop:m signed_factor:f 
-       {: RESULT = new OpExp(tleft,tright,t,m,f);
+       {: RESULT = new OpExp(tleft,tright,(Exp) t, (int)m, (Exp)f);
          System.out.println("DEBUG [term]: Parsed term"); :} 
        | signed_factor:f
        {: RESULT = f;
@@ -367,7 +368,7 @@ mulop ::= TIMES
          System.out.println("DEBUG [mulop]: Parsed DIVIDE operator"); :};
 
 signed_factor ::= MINUS signed_factor:s
-               {: RESULT = new OpExp(sleft,sright,new NilExp(sleft,sright),OpExp.UMINUS,s);
+               {: RESULT = new OpExp(sleft,sright,new NilExp(sleft,sright),OpExp.UMINUS, (Exp)s);
                   System.out.println("DEBUG [mulop]: Parsed signed factor"); :} 
                | factor:f 
                 {: RESULT = f;
@@ -383,14 +384,14 @@ factor ::= LPAREN expression:e RPAREN
          {: RESULT = c;
             System.out.println("DEBUG [factor]: Function call factor"); :} 
          | NUM:n 
-         {: RESULT = new IntExp(nleft,nright,n);
+         {: RESULT = new IntExp(nleft,nright,(String)n);
             System.out.println("DEBUG [factor]: Numeric constant "); :} 
          | TRUTH:t 
-         {: RESULT = new BoolExp(tleft,tright,t);
+         {: RESULT = new BoolExp(tleft,tright,(boolean)t);
             System.out.println("DEBUG [factor]: Boolean constant "); :};
 
 call ::= ID:i LPAREN args:a RPAREN 
-       {: RESULT = new CallExp(i,a);
+       {: RESULT = new CallExp(ileft, iright, (String) i, (ExpList) a);
          System.out.println("DEBUG [call]: Function call: "); :};
 
 args ::= arg_list:e 
@@ -401,12 +402,12 @@ args ::= arg_list:e
          System.out.println("DEBUG [args]: No arguments"); :};
 
 arg_list ::= arg_list:a COMMA expression:e 
-           {:  VarDecList t = a;
+           {:  ExpList t = (ExpList)a;
                while(t.tail != null)
                   t = t.tail;
-               t.tail = new ExpList(e, null);
+               t.tail = new ExpList((Exp)e, null);
                RESULT = a;
             System.out.println("DEBUG [arg_list]: Multiple function arguments"); :} 
            | expression:e 
-           {: RESULT = new ExpList(e,null);
+           {: RESULT = new ExpList((Exp)e,null);
             System.out.println("DEBUG [arg_list]: Single function argument"); :};

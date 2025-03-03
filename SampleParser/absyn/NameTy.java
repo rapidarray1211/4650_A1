@@ -13,6 +13,6 @@ public class NameTy extends Absyn{
         this.type = type;
     }
     public void accept( AbsynVisitor visitor, int level ) {
-        visitor.visit( this, level );
+        // visitor.visit( this, level );
     }
 }

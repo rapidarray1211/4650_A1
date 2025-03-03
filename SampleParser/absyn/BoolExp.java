@@ -1,6 +1,6 @@
 package absyn;
 
-public class BoolExp {
+public class BoolExp extends Exp {
     public boolean value;
 
     public BoolExp( int row, int col, Boolean value ) {
@@ -10,6 +10,6 @@ public class BoolExp {
     }
   
     public void accept( AbsynVisitor visitor, int level ) {
-      visitor.visit( this, level );
+    //   visitor.visit( this, level );
     }
 }

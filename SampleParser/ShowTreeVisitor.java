@@ -117,4 +117,92 @@ public class ShowTreeVisitor implements AbsynVisitor {
        exp.output.accept( this, ++level );
   }
 
+  // public void visit( ArrayDec exp, int level ) {
+  //   indent( level );
+  //   level++;
+  //   switch (exp.type.type) {
+  //     case 0:
+  //       System.out.println("NameTy: bool");
+  //       indent(level);
+  //       System.out.println("Name: " + exp.name);
+  //     case 1:
+  //       System.out.println("NameTy: int");
+  //       indent(level);
+  //       System.out.println("Name: " + exp.name);
+  //     case 2:
+  //       System.out.println("NameTy: void");
+  //       indent(level);
+  //       System.out.println("Name: " + exp.name);
+  //   }
+  //   if (exp.size != 0) {
+  //     indent(level);
+  //     System.out.println("Size: " + exp.size);
+  //   }
+  // }
+
+  // public void visit( BoolExp exp, int level ) {
+  //   indent( level );
+  //   level++;
+  //   System.out.println( "BoolExp: " + exp.value );
+  // }
+
+  // public void visit( CompoundExp exp, int level ) {
+  //   indent(level);
+  //   level++;
+  //   System.out.println("CompoundExp: ");
+  // }
+
+  // public void visit( DecList exp, int level ) {
+  //   indent(level);
+  //   level++;
+  //   System.out.println("DecList");
+  // }
+
+  // public void visit( FunctionDec exp, int level ) {
+  //   indent(level);
+  //   level++;
+  //   System.out.println("FunctionDec");
+  // }
+
+  // public void visit( IndexVar exp, int level ) {
+  //   indent(level);
+  //   level++;
+  //   System.out.println("IndexVar");
+  // }
+
+  // public void visit( NameTy exp, int level ) {
+  //   indent(level);
+  //   level++;
+  //   System.out.println("NameTy");
+  // }
+
+  // public void visit( SimpleDec exp, int level ) {
+  //   indent(level);
+  //   level++;
+  //   System.out.println("SimpleDec");
+  // }
+
+  // public void visit( SimpleVar exp, int level ) {
+  //   indent(level);
+  //   level++;
+  //   System.out.println("SimpleVar");
+  // }
+
+  // public void visit( VarDecList exp, int level ) {
+  //   indent(level);
+  //   level++;
+  //   System.out.println("VarDecList");
+  // }
+
+  // public void visit( WhileExp exp, int level ) {
+  //   indent(level);
+  //   level++;
+  //   System.out.println("WhileExp");
+  // }
+
+  // public void visit( NilExp exp, int level ) {
+  //   indent(level);
+  //   level++;
+  //   System.out.println("NiLExp");
+  // }
 }
