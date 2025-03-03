@@ -61,7 +61,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
         System.out.println( " / " );
         break;
       case OpExp.EQ:
-        System.out.println( " = " );
+        System.out.println( " == " );
         break;
       case OpExp.LT:
         System.out.println( " < " );
@@ -124,13 +124,15 @@ public class ShowTreeVisitor implements AbsynVisitor {
   public void visit( ArrayDec exp, int level ) {
     indent( level );
     level++;
-    exp.type.accept(this, level);
-    indent(level);
+
     System.out.println("Name: " + exp.name);
     if (exp.size != 0) {
       indent(level);
       System.out.println("Size: " + exp.size);
     }
+    indent(level);
+    exp.type.accept(this, level);
+    
   }
 
   public void visit( BoolExp exp, int level ) {
@@ -192,7 +194,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
   public void visit( IndexVar exp, int level ) {
     indent(level);
     level++;
-    System.out.println("IndexVar");
+    System.out.println("IndexVar: " + exp.name);
     exp.index.accept(this, level);
   }
 
