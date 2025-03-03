@@ -120,20 +120,9 @@ public class ShowTreeVisitor implements AbsynVisitor {
   public void visit( ArrayDec exp, int level ) {
     indent( level );
     level++;
-    switch (exp.type.type) {
-      case 0:
-        System.out.println("NameTy: bool");
-        indent(level);
-        System.out.println("Name: " + exp.name);
-      case 1:
-        System.out.println("NameTy: int");
-        indent(level);
-        System.out.println("Name: " + exp.name);
-      case 2:
-        System.out.println("NameTy: void");
-        indent(level);
-        System.out.println("Name: " + exp.name);
-    }
+    exp.type.accept(this, level);
+    indent(level);
+    System.out.println("Name: " + exp.name);
     if (exp.size != 0) {
       indent(level);
       System.out.println("Size: " + exp.size);
@@ -181,7 +170,12 @@ public class ShowTreeVisitor implements AbsynVisitor {
   public void visit( FunctionDec exp, int level ) {
     indent(level);
     level++;
-    System.out.println("FunctionDec");
+    System.out.println("FunctionDec " + exp.func_name);
+    if (exp.return_type != null) {
+      indent(level);
+      System.out.print("RETURN: ");
+      exp.return_type.accept(this, level);
+    }
     while (exp.parameters != null && exp.parameters.head != null ) {
       exp.parameters.head.accept(this, level);
       exp.parameters = exp.parameters.tail;
@@ -199,22 +193,29 @@ public class ShowTreeVisitor implements AbsynVisitor {
   }
 
   public void visit( NameTy exp, int level ) {
-    // switch (exp.type) {
-    //   case 0:
-    //     System.out.print("BOOLEAN ");
-    //   case 1:
-    //     System.out.print("INT ");
-    //   case 2:
-    //     System.out.print("VOID ");
-    //   case 3:
-    //     System.out.print("NULL ");
-    // }
+    // indent(level);
+    switch (exp.type) {
+      case 0:
+        System.out.println("NameTy: BOOLEAN");
+        break;
+      case 1:
+        System.out.println("NameTy: INT");
+        break;
+      case 2:
+        System.out.println("NameTy: VOID");
+        break;
+      case 3:
+        System.out.println("NameTy: NULL");
+        break;
+    }
   }
 
   public void visit( SimpleDec exp, int level ) {
     indent(level);
     level++;
-    System.out.println("SimpleDec: TYPE: " + exp.type.type);
+    System.out.println("SimpleDec: " + exp.name);
+    level++;
+    indent(level);
     exp.type.accept(this, level);
   }
 

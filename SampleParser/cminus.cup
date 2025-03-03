@@ -279,11 +279,11 @@ expression_stmt ::= expression:e SCOLON
                   :};
 
 selection_stmt ::= IF:i LPAREN expression:e RPAREN statement:s 
-                 {: RESULT = new IfExp(ileft, iright, (Exp) e, (ExpList) s, null);
+                 {: RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s, null), null);
                   //System.out.println("DEBUG: Parsed IF statement"); 
                   :} 
                  | IF:i LPAREN expression:e RPAREN statement:s1 ELSE statement:s2
-                 {: RESULT = new IfExp(ileft, iright, (Exp) e, (ExpList) s1, (ExpList) s2);
+                 {: RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), new ExpList((Exp) s2, null));
                   //System.out.println("DEBUG: Parsed IF-ELSE statement"); 
                   :};
 
