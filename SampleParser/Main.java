@@ -27,6 +27,7 @@ class Main {
           System.out.println("Parsing returned NULL! Check input file.");
       } else {
           System.out.println("Parsing completed successfully.");
+          System.out.println(result);
       }
       
       if (SHOW_TREE && result != null) {

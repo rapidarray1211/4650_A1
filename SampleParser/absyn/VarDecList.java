@@ -10,6 +10,6 @@ public class VarDecList extends Absyn {
     }
   
     public void accept( AbsynVisitor visitor, int level ) {
-      // visitor.visit( this, level );
+      visitor.visit( this, level );
     }
 }
