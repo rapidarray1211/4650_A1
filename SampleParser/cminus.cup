@@ -155,10 +155,19 @@ var_declaration ::= type_specifier:t ID:i SCOLON
                      parser.report_error("Invalid array at line " + (eleft + 1) + " and column " + (eright+1) + ". Need left bracket", e);
                      RESULT = new SimpleDec(tleft, tright, (NameTy) t, (String) i);
                   :}
-                  | type_specifier:t ID:i LSQUARE NUM:n error:e SCOLON
+                  | type_specifier:t ID:i LSQUARE NUM:n SCOLON error:e
                   {:
                      parser.report_error("Invalid array at line " + (eleft + 1) + " and column " + (eright+1) + ". Need right bracket", e);
                      RESULT = new ArrayDec(tleft, tright, (NameTy) t, (String) i, Integer.parseInt((String) n));
+                  :}
+                  | type_specifier:t ID:i LSQUARE RSQUARE error:e SCOLON
+                  {:
+                     parser.report_error("Missing array size at line " + (eleft + 1) + " and column " + (eright+1) + ".", e);
+                     RESULT = new SimpleDec(tleft, tright, (NameTy) t, (String) i);
+                  :}
+                  | error:e SCOLON
+                  {:
+                     parser.report_error("Error declaring variable at line " + (eleft + 1) + " and column " + (eright + 1), e);
                   :};
 
 
@@ -172,12 +181,37 @@ fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:c
                   {:
                      RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
                      parser.report_error("Missing left paranthesis at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :}
+                  | type_specifier:t ID:i LPAREN params:p error:e compound_stmt:cs
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing right paranthesis at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :}
+                  | type_specifier:t error:e LPAREN params:p RPAREN compound_stmt:cs
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, "", (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing function name at line " + (eleft + 1) + " and column " + (eright + 1), e); 
                   :};
 
 fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN:r SCOLON
                   {:
                      RESULT = new FunctionDec(tleft,tright, (NameTy) t,(String) i, (VarDecList) p, new NilExp(rleft,rright));
                      // System.out.println("DEBUG [fun_prototype]: Function prototype: ");
+                  :}
+                  | type_specifier:t ID:i error:e params:p RPAREN compound_stmt:cs SCOLON
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing left paranthesis at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :}
+                  | type_specifier:t ID:i LPAREN params:p error:e compound_stmt:cs SCOLON
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing right paranthesis at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :}
+                  | type_specifier:t error:e LPAREN params:p RPAREN compound_stmt:cs SCOLON
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, "", (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing function name at line " + (eleft + 1) + " and column " + (eright + 1), e); 
                   :};
 
 type_specifier ::= BOOL:b
@@ -204,6 +238,11 @@ params ::= param_list:pl
          | VOID 
          {: RESULT = new VarDecList(null,null);
             // System.out.println("DEBUG [params]: Void parameter list"); 
+         :}
+         | error: e 
+         {:
+            RESULT = new VarDecList(null, null);
+            parser.report_error("Syntax error at line " + (eleft + 1) + " and column " + (eright + 1) + " . Missing void parameter.", e); 
          :};
 
 param_list ::= param_list:pl COMMA param:p
@@ -229,6 +268,11 @@ param ::= type_specifier:t ID:i
         | type_specifier:t ID:i LSQUARE RSQUARE 
         {: RESULT = new ArrayDec(tleft,tright,(NameTy) t,(String) i,0);
          //   System.out.println("DEBUG [param]: Array parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value); 
+        :}
+        | type_specifier:t ID:i LSQUARE NUM:n error:e RSQUARE
+        {:
+            parser.report_error("Cannot declare size of array in function parameter list at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+            RESULT = new ArrayDec(tleft, tright, (NameTy) t, (String) i, 0);
         :};
 
 compound_stmt ::= LCURLY local_declarations:ld statement_list:sl RCURLY 
@@ -301,7 +345,28 @@ selection_stmt ::= IF:i LPAREN expression:e RPAREN statement:s
                  | IF:i LPAREN expression:e RPAREN statement:s1 ELSE statement:s2
                  {: RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), new ExpList((Exp) s2, null));
                   //System.out.println("DEBUG: Parsed IF-ELSE statement"); 
-                  :};
+                  :}
+                  | IF:i error:er expression:e RPAREN statement:s1
+                 {:
+                   RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), null);
+                   parser.report_error("Missing left parenthesis in if statmement at line " + (erleft + 1) + " at column " + (erright + 1), er);
+                 :}
+                 | IF:i LPAREN expression:e error:er statement:s1
+                 {:
+                   RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), null);
+                   parser.report_error("Missing right parenthesis in if statmement at line " + (erleft + 1) + " at column " + (erright + 1), er);
+                 :}
+                 | IF:i error:er expression:e RPAREN statement:s1 ELSE statement:s2
+                 {:
+                   RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), new ExpList((Exp) s2, null));
+                   parser.report_error("Missing left parenthesis in if statmement at line " + (erleft + 1) + " at column " + (erright + 1), er);
+                 :}
+                 | IF:i LPAREN expression:e error:er statement:s1 ELSE statement:s2
+                 {:
+                   RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), new ExpList((Exp) s2, null));
+                   parser.report_error("Missing right parenthesis in if statmement at line " + (erleft + 1) + " at column " + (erright + 1), er);
+                 :};
+
 
 iteration_stmt ::= WHILE:w LPAREN expression:e RPAREN statement:s 
                  {: RESULT = new WhileExp(wleft, wright, (Exp) e, (Exp) s);
