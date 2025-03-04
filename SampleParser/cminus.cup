@@ -171,7 +171,7 @@ var_declaration ::= type_specifier:t ID:i SCOLON
                      RESULT = new SimpleDec(tleft, tright, (NameTy) t, (String) i);
                   :}
                   | type_specifier:t ID:i error:e SCOLON
-                  {:
+                  {: 
                      parser.report_error("Invalid variable declaration/initialization  at line " + (eleft + 1) + " and column " + (eright + 1), e); 
                      RESULT = new SimpleDec(eleft, eright, (NameTy) t, (String) i);
                   :}
@@ -212,6 +212,11 @@ fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:c
                   {:
                      RESULT = new FunctionDec(tleft, tright, (NameTy) t, "", (VarDecList) p, (Exp) cs);
                      parser.report_error("Missing function name at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :}
+                  | type_specifier:t ID:i LPAREN RPAREN error:e compound_stmt:cs
+                  {:
+                     parser.report_error("Missing `void` in function declaration at line " + (ileft + 1) + " and column " + (iright + 1), e);
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, new VarDecList(null, null), (Exp) cs);
                   :};
 
 fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN:r SCOLON
@@ -404,12 +409,7 @@ return_stmt ::= RETURN:r SCOLON
               {: RESULT = new ReturnExp(rleft, rright, (Exp) e);
                //System.out.println("DEBUG [return_stmt]: Parsed RETURN statement with expression: " + 
                 //((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value); 
-               :}
-              | RETURN: r expression:e expression:e error:er SCOLON
-              {:
-                 parser.report_error("Invalid return expression. Can only return single expressions at line " + (erleft + 1) + " and column " + (erright + 1), e);
-                 RESULT = new ReturnExp(rleft, right, (Exp) e);
-              :};
+               :};
 
 expression ::= var:v ASSIGN expression:e
              {: RESULT = new AssignExp(vleft, vright, new VarExp(vleft, vright, (Var) v), (Exp) e);
