@@ -221,7 +221,9 @@ public class ShowTreeVisitor implements AbsynVisitor {
     level++;
     System.out.println("SimpleDec: " + exp.name);
     indent(level);
-    exp.type.accept(this, level);
+    if (exp.type != null) {
+      exp.type.accept(this, level);
+    }
   }
 
   public void visit( SimpleVar exp, int level ) {

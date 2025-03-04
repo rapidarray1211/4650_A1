@@ -9,7 +9,7 @@ parser code {:
        reason for the error which is passed into the method in the
        String 'message'. */
     public void report_error(String message, Object info) {
-   
+        if (message.contains("Syntax error")) return;
         /* Create a StringBuffer called 'm' with the string 'Error' in it. */
         StringBuffer m = new StringBuffer("Error");
    
@@ -44,6 +44,11 @@ parser code {:
            an error message, out on a line. */
         System.err.println(m);
     }
+    @Override
+   public void syntax_error(Symbol cur_token) {
+      // Suppress default expected token messages
+      return;
+   }
    
     /* Change the method report_fatal_error so when it reports a fatal
        error it will display the line and column number of where the
@@ -165,9 +170,25 @@ var_declaration ::= type_specifier:t ID:i SCOLON
                      parser.report_error("Missing array size at line " + (eleft + 1) + " and column " + (eright+1) + ".", e);
                      RESULT = new SimpleDec(tleft, tright, (NameTy) t, (String) i);
                   :}
+                  | type_specifier:t ID:i error:e SCOLON
+                  {:
+                     parser.report_error("Invalid variable declaration/initialization  at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                     RESULT = new SimpleDec(eleft, eright, (NameTy) t, (String) i);
+                  :}
+                  | type_specifier:t error:e SCOLON
+                  {:
+                     parser.report_error("Missing variable name " + (eleft + 1) + " and column " + (eright + 1), e); 
+                     RESULT = new SimpleDec(eleft, eright, (NameTy) t, null);
+                  :}
+                  |  error:e ID:i SCOLON
+                  {:
+                     parser.report_error("Missing type at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                     RESULT = new SimpleDec(eleft, eright, new NameTy(eleft, eright, 3), (String) i);
+                  :}
                   | error:e SCOLON
                   {:
-                     parser.report_error("Error declaring variable at line " + (eleft + 1) + " and column " + (eright + 1), e);
+                     parser.report_error("Invalid variable declaration/initialization at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                     RESULT = new SimpleDec(eleft, eright, new NameTy(eleft, eright, 3), null);
                   :};
 
 
@@ -280,6 +301,8 @@ compound_stmt ::= LCURLY local_declarations:ld statement_list:sl RCURLY
                   // System.out.println("DEBUG [compound_stmt]: Entered compound statement"); 
                :};
 
+               
+
 /*LocDecl is also a list*/
 local_declarations ::= local_declarations:ld var_declaration:vd
                      {: /*Add vd to tail of ld*/
@@ -381,7 +404,12 @@ return_stmt ::= RETURN:r SCOLON
               {: RESULT = new ReturnExp(rleft, rright, (Exp) e);
                //System.out.println("DEBUG [return_stmt]: Parsed RETURN statement with expression: " + 
                 //((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value); 
-               :};
+               :}
+              | RETURN: r expression:e expression:e error:er SCOLON
+              {:
+                 parser.report_error("Invalid return expression. Can only return single expressions at line " + (erleft + 1) + " and column " + (erright + 1), e);
+                 RESULT = new ReturnExp(rleft, right, (Exp) e);
+              :};
 
 expression ::= var:v ASSIGN expression:e
              {: RESULT = new AssignExp(vleft, vright, new VarExp(vleft, vright, (Var) v), (Exp) e);

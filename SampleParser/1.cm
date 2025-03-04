@@ -59,6 +59,4 @@ void main(void) {
             output(result);
         }
     }
-
-    return;
 }
