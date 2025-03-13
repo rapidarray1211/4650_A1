@@ -1,4 +1,4 @@
-package Checkpoint_two;
+package Symbol;
 
 public class NodeType {
     

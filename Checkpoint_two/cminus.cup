@@ -43,6 +43,8 @@ parser code {:
         /* Print the contents of the StringBuffer 'm', which contains
            an error message, out on a line. */
         System.err.println(m);
+
+        valid = false;
     }
     @Override
    public void syntax_error(Symbol cur_token) {
