@@ -1,5 +1,8 @@
 /* File 1: Large File that has no errors, Tests many aspects */
 
+void initializeArray(int arr[], int size);
+void printResult(int num, bool check);
+
 int globalVar;
 
 void initializeArray(int arr[], int size) {

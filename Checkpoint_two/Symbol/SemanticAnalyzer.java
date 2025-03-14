@@ -37,22 +37,40 @@ public class SemanticAnalyzer implements AbsynVisitor {
             paramTypes.add(getType(params.head));
             params = params.tail;
         }
-
-        boolean success = symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0);
-        if (!success) {
-            System.err.println("Error: Function '" + node.func_name + "' is already declared.");
+    
+        SymbolEntry existingEntry = symbolTable.lookup(node.func_name);
+        
+        if (node.body instanceof NilExp) {
+            if (existingEntry != null) {
+                System.err.println("Warning: Function prototype for '" + node.func_name + "' is re-declared.");
+            } else {
+                symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0);
+                System.out.println("[PROTOTYPE] Declared function prototype '" + node.func_name + "'");
+            }
+        } else { 
+            if (existingEntry != null) {
+                if (existingEntry.dim != paramTypes.size()) {
+                    System.err.println("Error: Function declaration for '" + node.func_name + "' does not match prototype.");
+                } else {
+                    System.out.println("[MATCH] Function '" + node.func_name + "' matches prototype.");
+                }
+            } else {
+                System.out.println("[DEFINE] Declaring function '" + node.func_name + "'");
+                symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0);
+            }
+    
+            symbolTable.enterScope();
+            params = node.parameters;
+            while (params != null && params.head != null) {
+                params.head.accept(this, level + 1);
+                params = params.tail;
+            }
+    
+            node.body.accept(this, level + 1);
+            symbolTable.exitScope();
         }
-
-        symbolTable.enterScope();
-        params = node.parameters;
-        while (params != null && params.head != null) {
-            params.head.accept(this, level + 1);
-            params = params.tail;
-        }
-
-        node.body.accept(this, level + 1);
-        symbolTable.exitScope();
     }
+    
 
     @Override
     public void visit(SimpleDec node, int level) {
