@@ -16,6 +16,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         symbolTable.enterScope();
         visit(root, 0);
         symbolTable.exitScope();
+       symbolTable.printTable();
     }
 
     @Override
