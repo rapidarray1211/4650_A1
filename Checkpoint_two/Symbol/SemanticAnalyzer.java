@@ -7,9 +7,15 @@ import java.util.ArrayList;
 
 public class SemanticAnalyzer implements AbsynVisitor {
     private SymbolTable symbolTable;
+    private int symbolCount = 0;
 
-    public SemanticAnalyzer() {
-        symbolTable = new SymbolTable();
+    public SemanticAnalyzer(int nSymbols) {
+        symbolTable = new SymbolTable(nSymbols);
+    }
+
+    //needed to implemennt this because it is in impelemented class.
+    public int getSymbolCount(){
+        return symbolCount;
     }
 
     public void analyze(DecList root) {

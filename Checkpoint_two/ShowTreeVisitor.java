@@ -2,8 +2,13 @@ import absyn.*;
 
 public class ShowTreeVisitor implements AbsynVisitor {
 
-  final static int SPACES = 4;
+  static final int SPACES = 4;
+  int symbolCount;
 
+  //keep track of numbr of symbols to determine size of hash table
+  public int getSymbolCount() {
+    return this.symbolCount;
+  }
   private void indent( int level ) {
     for( int i = 0; i < level * SPACES; i++ ) System.out.print( " " );
   }
@@ -124,6 +129,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
   public void visit( ArrayDec exp, int level ) {
     indent( level );
     level++;
+    symbolCount++;
 
     System.out.println("Name: " + exp.name);
     if (exp.size != 0) {
@@ -176,6 +182,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
   public void visit( FunctionDec exp, int level ) {
     indent(level);
     level++;
+    symbolCount++;
     System.out.println("FunctionDec " + exp.func_name);
     if (exp.return_type != null) {
       indent(level);
@@ -219,6 +226,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
   public void visit( SimpleDec exp, int level ) {
     indent(level);
     level++;
+    symbolCount++;
     System.out.println("SimpleDec: " + exp.name);
     indent(level);
     if (exp.type != null) {

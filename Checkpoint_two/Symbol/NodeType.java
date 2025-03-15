@@ -1,3 +1,4 @@
+package Symbol;
 import absyn.Dec;
 
 public class NodeType {

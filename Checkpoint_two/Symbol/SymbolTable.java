@@ -1,68 +1,69 @@
 package Symbol;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.ArrayList;
+import absyn.Dec;
 
 public class SymbolTable {
-    private HashMap<String, SymbolEntry> table;
+    private HashMap<String, ArrayList<NodeType>> table;
     private int currentScope;
 
-    public SymbolTable() {
-        this.table = new HashMap<>();
+    public SymbolTable(int nSymbols) {
+        int capacity = (int)(nSymbols * 1.5);
+        this.table = new HashMap<>(capacity);
         this.currentScope = 0;
         System.out.println("[INIT] Symbol Table Created. Global Scope: " + currentScope);
     }
 
+
     public void enterScope() {
         currentScope++;
-        System.out.println("\n[ENTER] Entering Scope Level: " + currentScope);
     }
 
-    public void exitScope() {
-        System.out.println("\n[EXIT] Exiting Scope Level: " + currentScope);
-        printTable();
-        Iterator<Map.Entry<String, SymbolEntry>> iterator = table.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, SymbolEntry> entry = iterator.next();
-            if (entry.getValue().scope == currentScope) {
-                System.out.println("[REMOVE] Removing: " + entry.getKey() + " from Scope: " + currentScope);
-                iterator.remove();
-            }
-        }
-        currentScope--;
-        System.out.println("[SCOPE UPDATE] Current Scope after exit: " + currentScope);
-    }
 
-    public boolean insert(String name, int type, int dim, int offset, int pc) {
-        System.out.println("[INSERT] Attempting to insert '" + name + "' at Scope: " + currentScope);
-        if (table.containsKey(name) && table.get(name).scope == currentScope) {
-            System.out.println("[ERROR] Duplicate Declaration: '" + name + "' already exists in Scope: " + currentScope);
-            return false;
+    public boolean insert(String name, Dec type) {
+        NodeType newNode = new NodeType(name, type, currentScope);
+        ArrayList<NodeType> nodeArray = table.get(name);
+
+        if (nodeArray == null) {
+            nodeArray = new ArrayList<>();
+            nodeArray.add(newNode);
+            table.put(name,nodeArray);
         }
-        table.put(name, new SymbolEntry(type, currentScope, dim, offset, pc));
-        System.out.println("[SUCCESS] Inserted '" + name + "' (Type: " + type + ", Dim: " + dim + ", Offset: " + offset + ", PC: " + pc + ") in Scope: " + currentScope);
+        else{
+            nodeArray.add(newNode);
+        }
         return true;
     }
 
-    public SymbolEntry lookup(String name) {
-        SymbolEntry entry = table.get(name);
-        if (entry != null) {
-            System.out.println("[LOOKUP] Found '" + name + "' in Scope: " + entry.scope);
+    public NodeType lookup(String name) {
+        ArrayList<NodeType> nodeArray = table.get(name);
+        if (nodeArray == null) {
+            return null;
         } else {
-            System.out.println("[LOOKUP] '" + name + "' NOT FOUND in any active scope.");
+            return nodeArray.get(nodeArray.size() - 1);
         }
-        return entry;
     }
 
-    public void printTable() {
-        System.out.println("\n[PRINT] Symbol Table Dump (Current Scope: " + currentScope + ")");
-        if (table.isEmpty()) {
-            System.out.println("[EMPTY] Symbol Table is empty.");
-        } else {
-            for (Map.Entry<String, SymbolEntry> entry : table.entrySet()) {
-                System.out.println(entry.getKey() + " -> " + entry.getValue());
+    public int delete(){
+        for (Map.Entry<String,ArrayList<NodeType>> entry : table.entrySet()){
+            ArrayList<NodeType> nodeArray = entry.getValue();
+            NodeType node = nodeArray.get(nodeArray.size() - 1);
+
+            if (node.level == currentScope){
+                nodeArray.remove(nodeArray.size() - 1);
             }
+
+            if (nodeArray.isEmpty()){
+                String name = entry.getKey();
+                table.remove(name);
+            }
+
         }
+        
+        currentScope --;
+        return currentScope;
     }
+
 }
