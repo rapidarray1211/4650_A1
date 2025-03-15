@@ -10,7 +10,7 @@ CUP=$(JAVA) $(CLASSPATH) java_cup.Main
 
 all: Main.class
 
-Main.class: absyn/*.java Symbol/*.java parser.java sym.java Lexer.java ShowTreeVisitor.java Scanner.java Main.java
+Main.class: absyn/*.java semantic_analyzer/*.java parser.java sym.java Lexer.java ShowTreeVisitor.java Scanner.java Main.java
 
 %.class: %.java
 	$(JAVAC) $(CLASSPATH) $^
@@ -23,4 +23,4 @@ parser.java: cminus.cup
 	$(CUP) -expect 3 cminus.cup
 
 clean:
-	rm -f parser.java Lexer.java sym.java *.class absyn/*.class *~ Symbol/*.class
+	rm -f parser.java Lexer.java sym.java *.class absyn/*.class *~ semantic_analyzer/*.class
