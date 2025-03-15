@@ -14,7 +14,6 @@ public class SymbolTable {
         int capacity = (int)(nSymbols * 1.5);
         this.table = new HashMap<>(capacity);
         this.currentScope = 0;
-        System.out.println("[INIT] Symbol Table Created. Global Scope: " + currentScope);
     }
 
 
