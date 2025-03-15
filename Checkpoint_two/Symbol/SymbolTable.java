@@ -22,6 +22,10 @@ public class SymbolTable {
         currentScope++;
     }
 
+    public void exitScope(){
+        currentScope--;
+    }
+
 
     public boolean insert(String name, Dec type) {
         NodeType newNode = new NodeType(name, type, currentScope);
@@ -72,8 +76,7 @@ public class SymbolTable {
             }
 
         }
-        
-        currentScope --;
+
         return currentScope;
     }
 
