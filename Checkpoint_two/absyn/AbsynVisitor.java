@@ -2,6 +2,8 @@ package absyn;
 
 public interface AbsynVisitor {
 
+  //this is to keep track of number of symbols to make an appropriate
+  //size of hash table
   public int getSymbolCount();
 
   public void visit( ExpList exp, int level );
