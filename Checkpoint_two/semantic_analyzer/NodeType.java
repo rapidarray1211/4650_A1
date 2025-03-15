@@ -1,4 +1,5 @@
-package Symbol;
+package semantic_analyzer;
+
 import absyn.Dec;
 
 public class NodeType {

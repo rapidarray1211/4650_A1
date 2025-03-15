@@ -1,4 +1,4 @@
-package Symbol;
+package semantic_analyzer;
 
 import absyn.*;
 
@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class SemanticAnalyzer implements AbsynVisitor {
+    
     private SymbolTable symbolTable;
     private int symbolCount = 0;
 
@@ -13,7 +14,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         symbolTable = new SymbolTable(nSymbols);
     }
 
-    //needed to implemennt this because it is in impelemented class.
+    //needed to implemennt this because it is in implemented class.
     public int getSymbolCount(){
         return symbolCount;
     }
@@ -22,7 +23,6 @@ public class SemanticAnalyzer implements AbsynVisitor {
         symbolTable.enterScope();
         visit(root, 0);
         symbolTable.exitScope();
-       symbolTable.printTable();
     }
 
     @Override

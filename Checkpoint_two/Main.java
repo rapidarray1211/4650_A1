@@ -1,13 +1,13 @@
 import java.io.*;
 import absyn.*;
-import Symbol.SemanticAnalyzer;
-import Symbol.SymbolTable;
+import semantic_analyzer.SemanticAnalyzer;
+import semantic_analyzer.SymbolTable;
 
 class Main {
-    public final static boolean SHOW_TREE = true;
-    public final static boolean RUN_SEMANTIC_ANALYSIS = true;
+    public static final boolean SHOW_TREE = true;
+    public static final boolean RUN_SEMANTIC_ANALYSIS = true;
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         int symbolCount;
 
         try {

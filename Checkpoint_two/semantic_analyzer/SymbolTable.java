@@ -1,4 +1,4 @@
-package Symbol;
+package semantic_analyzer;
 
 import java.util.HashMap;
 import java.util.Map;
