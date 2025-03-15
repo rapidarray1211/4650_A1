@@ -47,6 +47,7 @@ public class SymbolTable {
         }
     }
 
+    //Delete's entry based on current scope
     public int delete(){
         Iterator<Map.Entry<String, ArrayList<NodeType>>> iterator = table.entrySet().iterator();
         while (iterator.hasNext()){
