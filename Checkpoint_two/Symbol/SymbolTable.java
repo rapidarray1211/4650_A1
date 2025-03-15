@@ -3,6 +3,7 @@ package Symbol;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.Iterator;
 import absyn.Dec;
 
 public class SymbolTable {
@@ -47,17 +48,26 @@ public class SymbolTable {
     }
 
     public int delete(){
-        for (Map.Entry<String,ArrayList<NodeType>> entry : table.entrySet()){
-            ArrayList<NodeType> nodeArray = entry.getValue();
-            NodeType node = nodeArray.get(nodeArray.size() - 1);
+        Iterator<Map.Entry<String, ArrayList<NodeType>>> iterator = table.entrySet().iterator();
+        while (iterator.hasNext()){
 
-            if (node.level == currentScope){
-                nodeArray.remove(nodeArray.size() - 1);
+            Map.Entry<String, ArrayList<NodeType>> entry = iterator.next();
+            ArrayList<NodeType> nodeArray = entry.getValue();
+
+            for (int i = nodeArray.size() - 1; i >= 0; i--){
+                NodeType node = nodeArray.get(i);
+
+                if (node.level == currentScope){
+                    nodeArray.remove(i);
+                }
+                else{
+                    break;
+                }
             }
 
+
             if (nodeArray.isEmpty()){
-                String name = entry.getKey();
-                table.remove(name);
+                iterator.remove();
             }
 
         }
