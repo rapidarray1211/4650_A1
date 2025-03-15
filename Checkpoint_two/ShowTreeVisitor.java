@@ -3,7 +3,7 @@ import absyn.*;
 public class ShowTreeVisitor implements AbsynVisitor {
 
   static final int SPACES = 4;
-  int symbolCount;
+  int symbolCount = 0;
 
   //keep track of numbr of symbols to determine size of hash table
   public int getSymbolCount() {
