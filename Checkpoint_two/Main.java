@@ -25,7 +25,7 @@ class Main {
 
                 if (RUN_SEMANTIC_ANALYSIS) {
                     System.out.println("\nStarting Semantic Analysis...");
-                    SemanticAnalyzer analyzer = new SemanticAnalyzer();
+                    SemanticAnalyzer analyzer = new SemanticAnalyzer(symbolCount);
                     analyzer.analyze((DecList) result);
                     System.out.println("Semantic Analysis Completed.");
                 }
