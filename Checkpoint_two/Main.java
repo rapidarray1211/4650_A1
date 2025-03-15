@@ -8,6 +8,8 @@ class Main {
     public final static boolean RUN_SEMANTIC_ANALYSIS = true;
 
     public static void main(String argv[]) {
+        int symbolCount;
+
         try {
             System.out.println("Starting parser on file: " + argv[0]);
 
@@ -18,6 +20,7 @@ class Main {
                 if (SHOW_TREE) {
                     AbsynVisitor visitor = new ShowTreeVisitor();
                     result.accept(visitor, 0);
+                    symbolCount = visitor.getSymbolCount();
                 }
 
                 if (RUN_SEMANTIC_ANALYSIS) {
