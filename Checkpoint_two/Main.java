@@ -2,6 +2,7 @@ import java.io.*;
 import absyn.*;
 import semantic_analyzer.SemanticAnalyzer;
 import semantic_analyzer.SymbolTable;
+import semantic_analyzer.AnalyzerPrinter;
 
 class Main {
     public static final boolean SHOW_TREE = true;
@@ -9,6 +10,8 @@ class Main {
 
     public static void main(String[] argv) {
         int symbolCount;
+        AnalyzerPrinter aPrinter = new AnalyzerPrinter("out.txt", false);
+
 
         try {
             System.out.println("Starting parser on file: " + argv[0]);
@@ -25,7 +28,7 @@ class Main {
 
                 if (RUN_SEMANTIC_ANALYSIS) {
                     System.out.println("\nStarting Semantic Analysis...");
-                    SemanticAnalyzer analyzer = new SemanticAnalyzer(symbolCount);
+                    SemanticAnalyzer analyzer = new SemanticAnalyzer(symbolCount,aPrinter);
                     analyzer.analyze((DecList) result);
                     System.out.println("Semantic Analysis Completed.");
                 }

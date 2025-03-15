@@ -9,9 +9,11 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
     private SymbolTable symbolTable;
     private int symbolCount = 0;
+    public AnalyzerPrinter printer;
 
-    public SemanticAnalyzer(int nSymbols) {
+    public SemanticAnalyzer(int nSymbols, AnalyzerPrinter printer) {
         symbolTable = new SymbolTable(nSymbols);
+        this.printer = printer;
     }
 
     //needed to implemennt this because it is in implemented class.
@@ -39,6 +41,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     public void visit(FunctionDec node, int level) {
         List<String> paramTypes = new ArrayList<>();
         VarDecList params = node.parameters;
+
         while (params != null && params.head != null) {
             paramTypes.add(getType(params.head));
             params = params.tail;
