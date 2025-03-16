@@ -3,11 +3,12 @@ package semantic_analyzer;
 import java.io.FileWriter;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.List;
 
 public class AnalyzerPrinter {
 
     private BufferedWriter writer;
-    private boolean toFile;
+    private boolean toFile; //write to file or stdout
     private static final int  SPACES = 4;
 
     public AnalyzerPrinter(String filename, boolean toFile){
@@ -39,10 +40,12 @@ public class AnalyzerPrinter {
         }
     }
 
+    //print to stderr
     public void printErr(String error){
         System.err.println(error);
     }
 
+    //print message without level
     public void printMsg(String msg){
         if (toFile){
             try {
@@ -57,7 +60,8 @@ public class AnalyzerPrinter {
         }
     }
 
-    public void printSymbol(String msg, int level){
+    //print a single message at a level
+    public void printLevel(String msg, int level){
 
         indent(level);
         if (toFile){
@@ -72,6 +76,14 @@ public class AnalyzerPrinter {
             System.out.println(msg);
         }
 
+    }
+
+    //get arrayList of strings and print
+    public void printLevelList(List<String> strings, int level){
+
+        for (String msg : strings){
+            printLevel(msg, level);
+        }
     }
 
     public void close(){
