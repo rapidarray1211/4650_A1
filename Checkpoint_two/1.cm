@@ -9,6 +9,5 @@ int foo(void) {
 void main(void) {
     int x;
     x = 10;
-    if (x) x = 5;
-    if (foo()) x = 5;
+    if (x < 15) x = 5;
 }

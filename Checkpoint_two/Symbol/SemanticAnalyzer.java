@@ -361,8 +361,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
     }
 
     private boolean isTypeCompatible(Exp left, Exp right) {
-        return left.getClass() == right.getClass();
+        String leftType = getExpressionType(left);
+        String rightType = getExpressionType(right);
+    
+        System.out.println("[DEBUG] Comparing types: " + leftType + " vs " + rightType);
+    
+        return leftType.equals(rightType);
     }
+    
 
     private String getType(VarDec node) {
         if (node instanceof SimpleDec) return ((SimpleDec) node).type.toString();
@@ -404,6 +410,22 @@ public class SemanticAnalyzer implements AbsynVisitor {
             } else {
                 System.err.println("[ERROR] Function '" + callExp.func + "' is undefined.");
             }
+        }
+        if (expr instanceof OpExp) {
+            OpExp opExp = (OpExp) expr;
+            String leftType = getExpressionType(opExp.left);
+            String rightType = getExpressionType(opExp.right);
+    
+            if (!leftType.equals(rightType)) {
+                System.err.println("[ERROR] Type mismatch in operation: Cannot apply operator to '" + leftType + "' and '" + rightType + "'.");
+                return "unknown";
+            }
+    
+            if (opExp.op == OpExp.EQ || opExp.op == OpExp.LT || opExp.op == OpExp.GT) {
+                return "bool";
+            }
+    
+            return leftType; 
         }
         return "unknown";
     }
