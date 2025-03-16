@@ -119,7 +119,6 @@ public class SemanticAnalyzer implements AbsynVisitor {
         System.out.println("[VISIT] AssignExp at level " + level);
     
         String lhsType = null;
-        String rhsType = null;
         String varName = null;
     
         if (node.lhs instanceof VarExp) {
@@ -136,7 +135,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
                 if (lhsEntry == null) {
                     System.err.println("[ERROR] Variable '" + varName + "' is undeclared.");
-                    return;  // No need to check type if variable is undeclared
+                    return;
                 } else {
                     lhsType = getTypeFromEntry(lhsEntry);
                     System.out.println("[LOOKUP] Found variable '" + varName + "' of type '" + lhsType + "' in Scope: " + lhsEntry.scope);
@@ -147,26 +146,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             return;
         }
     
-        if (node.rhs instanceof BoolExp) {
-            rhsType = "bool";
-        } else if (node.rhs instanceof IntExp) {
-            rhsType = "int";
-        } else if (node.rhs instanceof VarExp) {
-            VarExp varExp = (VarExp) node.rhs;
-            if (varExp.variable instanceof SimpleVar) {
-                String rhsVarName = ((SimpleVar) varExp.variable).name;
-                SymbolEntry rhsEntry = symbolTable.lookup(rhsVarName);
-                if (rhsEntry != null) {
-                    rhsType = getTypeFromEntry(rhsEntry);
-                    System.out.println("[LOOKUP] Found RHS variable '" + rhsVarName + "' of type '" + rhsType + "'");
-                } else {
-                    System.err.println("[ERROR] RHS variable '" + rhsVarName + "' is undeclared.");
-                    return;
-                }
-            }
-        } else {
-            System.out.println("[INFO] RHS is an expression. Type checking deferred.");
-        }
+        String rhsType = getExpressionType(node.rhs);
     
         if (lhsType != null && rhsType != null && !lhsType.equals(rhsType)) {
             System.err.println("[ERROR] Type mismatch in assignment: Cannot assign '" + rhsType + "' to '" + lhsType + "'.");
@@ -174,6 +154,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
         node.rhs.accept(this, level);
     }
+    
     
     
 
