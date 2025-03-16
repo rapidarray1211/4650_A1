@@ -1,62 +1,10 @@
-/* File 1: Large File that has no errors, Tests many aspects */
-
-void initializeArray(int arr[], int size);
-void printResult(int num, bool check);
-
-int globalVar;
-
-void initializeArray(int arr[], int size) {
-    int i;
-    i = 0;
-    while (i < size) {
-        arr[i] = i+2;
-        i = i + 1;
-    }
-}
-
-int sumArray(int arr[], int size) {
-    int i;
-    int sum;
-    sum = 0;
-    i = 0;
-    while (i < size) {
-        sum = sum + arr[i];
-        i = i + 1;
-    }
-    return sum;
-}
-
-bool isEven(int num) {
-    return (num / 2) * 2 == num;
-}
-
-
-void printResult(int num, bool check) {
-    if (check) {
-        output(num);
-    } else {
-        output(0);
-    }
-}
-
 void main(void) {
-    int arr[5];
-    int result;
-    bool flag;
-
-    initializeArray(arr, 5);
-
-    result = sumArray(arr, 5);
-
-    flag = isEven(result);
-
-    printResult(result, flag);
-
-    while (result > 0) {
-        result = result - 1;
-        flag = isEven(result);
-        if (flag) {
-            output(result);
-        }
-    }
+    int x;
+    int x;
+    y = 10; 
+    x[1] = 5;
+    int z;
+    z = TRUE;
 }
+
+void main(int test);
