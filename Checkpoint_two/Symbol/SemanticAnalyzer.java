@@ -98,19 +98,19 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
     @Override
     public void visit(CompoundExp node, int level) {
-        System.out.println("[ENTER] Compound Statement Scope at level " + level);
-        symbolTable.enterScope();
+        // System.out.println("[ENTER] Compound Statement Scope at level " + level);
+        // symbolTable.enterScope();
         
         if (node.decs != null) {
-            node.decs.accept(this, level + 1);
+            node.decs.accept(this, level);
         }
         
         if (node.exps != null) {
             System.out.println("[VISIT] Visiting expressions in CompoundExp at level " + level);
-            node.exps.accept(this, level + 1);  // Ensure expressions are visited!
+            node.exps.accept(this, level); // Ensure expressions are visited!
         }
         
-        symbolTable.exitScope();
+        // symbolTable.exitScope();
         System.out.println("[EXIT] Compound Statement Scope at level " + level);
     }    
 
@@ -190,7 +190,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     @Override
     public void visit(CallExp node, int level) {
         System.out.println("[VISIT] CallExp: Calling function '" + node.func + "' at level " + level);
-        SymbolEntry entry = symbolTable.lookup(node.func);
+        SymbolEntry entry = symbolTable.lookupGlobal(node.func);
         if (entry == null) {
             System.err.println("[ERROR] Function '" + node.func + "' is undefined.");
             return;
@@ -212,17 +212,30 @@ public class SemanticAnalyzer implements AbsynVisitor {
     @Override
     public void visit(IfExp node, int level) {
         System.out.println("[VISIT] IfExp");
+    
         node.test.accept(this, level);
+        String conditionType = getExpressionType(node.test);
+    
+        if (!conditionType.equals("bool")) {
+            System.err.println("[ERROR] Condition in if-statement must be  'bool', but got '" + conditionType + "'.");
+        }
+    
         node.thenpart.accept(this, level);
         if (node.elsepart != null) {
             node.elsepart.accept(this, level);
         }
     }
+    
 
     @Override
     public void visit(WhileExp node, int level) {
         System.out.println("[VISIT] WhileExp");
         node.test.accept(this, level);
+        String conditionType = getExpressionType(node.test);
+    
+        if (!conditionType.equals("bool")) {
+            System.err.println("[ERROR] Condition in if-statement must be  'bool', but got '" + conditionType + "'.");
+        }
         node.body.accept(this, level);
     }
 
@@ -339,6 +352,11 @@ public class SemanticAnalyzer implements AbsynVisitor {
         } else if (entry.dim <= 0) {
             System.err.println("Error: '" + node.name + "' is not an array.");
         }
+        if (node.index instanceof IntExp) {
+            System.out.println("[INFO] Valid integer index for array '" + node.name + "'.");
+        } else {
+            System.err.println("[ERROR] Array index for '" + node.name + "' must be an integer.");
+        }
         node.index.accept(this, level);
     }
 
@@ -353,9 +371,40 @@ public class SemanticAnalyzer implements AbsynVisitor {
     }
 
     private String getTypeFromEntry(SymbolEntry entry) {
-        if (entry.type == 0) return "int";
-        if (entry.type == 1) return "void";
-        if (entry.type == 2) return "bool";
+        if (entry.type == 0) return "bool";
+        if (entry.type == 1) return "int";
+        if (entry.type == 2) return "void";
+        return "unknown";
+    }
+
+    private String getExpressionType(Exp expr) {
+        if (expr instanceof BoolExp) return "bool";
+        if (expr instanceof IntExp) return "int";
+        if (expr instanceof VarExp) {
+            VarExp varExp = (VarExp) expr;
+            if (varExp.variable instanceof SimpleVar) {
+                String varName = ((SimpleVar) varExp.variable).name;
+                SymbolEntry entry = symbolTable.lookup(varName);
+                if (entry != null) {
+                    return getTypeFromEntry(entry);
+                }
+            }
+        }
+        if (expr instanceof CallExp) {
+            CallExp callExp = (CallExp) expr;
+            SymbolEntry entry = symbolTable.lookup(callExp.func);
+            
+            if (entry == null) {
+                entry = symbolTable.lookupGlobal(callExp.func);
+            }
+    
+            if (entry != null) {
+                System.out.println("[LOOKUP] Function '" + callExp.func + "' returns type '" + getTypeFromEntry(entry) + "'");
+                return getTypeFromEntry(entry);
+            } else {
+                System.err.println("[ERROR] Function '" + callExp.func + "' is undefined.");
+            }
+        }
         return "unknown";
     }
     

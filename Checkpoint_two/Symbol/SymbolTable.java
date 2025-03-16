@@ -65,4 +65,14 @@ public class SymbolTable {
             }
         }
     }
+
+    public SymbolEntry lookupGlobal(String name) {
+        for (Map.Entry<String, SymbolEntry> entry : table.entrySet()) {
+            if (entry.getKey().equals(name) && entry.getValue().scope == 1) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+    
 }

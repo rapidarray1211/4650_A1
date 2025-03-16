@@ -1,10 +1,14 @@
-void main(void) {
+int foo(void) {
     int x;
-    int x;
-    y = 10; 
-    x[1] = 5;
-    int z;
-    z = TRUE;
+    int y;
+    y = 15;
+    x = y;
+    return x;
 }
 
-void main(int test);
+void main(void) {
+    int x;
+    x = 10;
+    if (x) x = 5;
+    if (foo()) x = 5;
+}
