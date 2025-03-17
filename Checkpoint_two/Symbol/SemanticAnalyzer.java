@@ -13,6 +13,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 	private AnalyzerPrinter printer;
     private boolean hasReturn = false;
     private boolean mainDeclared = false;
+    private boolean firstCompoundInFunction = false;
 
     public SemanticAnalyzer(AnalyzerPrinter printer) {
         symbolTable = new SymbolTable();
@@ -59,6 +60,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     public void visit(FunctionDec node, int level) {
         //System.out.println("[VISIT] FunctionDec '" + node.func_name + "' at level " + level);
 		//printer.printLevel("[VISIT] FunctionDec '" + node.func_name + "' at level " + level, level);
+        firstCompoundInFunction = true;
         hasReturn = false;
         List<String> paramTypes = new ArrayList<>();
         switch (node.return_type.type) {
@@ -121,8 +123,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                     errorOutput = errorOutput + "\n[ERROR] Duplicate function declaration for '" + node.func_name + "' at line " + (node.row + 1) + " and column " + (node.col + 1);    
                 }
             }
-
-            // symbolTable.enterScope();
+            symbolTable.enterScope();
             //system.out.println("[ENTER] Scope for function '" + node.func_name + "'");
 			//printer.printLevel("[ENTER] Scope for function '" + node.func_name + "'", level);
             
@@ -137,10 +138,11 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 errorFlag = true;
                 errorOutput = errorOutput + "\n[ERROR] Function '" + node.func_name + "' must have a return statement at line " + (node.row + 1) + " and column " + (node.col + 1);
             }
-            // symbolTable.exitScope();
+            symbolTable.exitScope();
             //system.out.println("[EXIT] Scope for function '" + node.func_name + "'");
 			//printer.printLevel("[EXIT] Scope for function '" + node.func_name + "'", level);
             currentFunctionReturnType = null;
+            firstCompoundInFunction = false;
         }
     }
 
@@ -168,10 +170,16 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
     @Override
     public void visit(CompoundExp node, int level) {
+        boolean enteredScope = false;
         // System.out.println("[ENTER] Compound Statement Scope at level " + level);
 		//printer.printLevel("[ENTER] Compound Statement Scope at level " + level, level);
-        symbolTable.enterScope();
-        
+        if (firstCompoundInFunction) {
+            firstCompoundInFunction = false;
+        } else {
+            enteredScope = true;
+            symbolTable.enterScope();
+        }
+
         if (node.decs != null) {
             node.decs.accept(this, level);
         }
@@ -181,8 +189,9 @@ public class SemanticAnalyzer implements AbsynVisitor {
 			//printer.printLevel("[VISIT] Visiting expressions in CompoundExp at level " + level, level);
             node.exps.accept(this, level); // Ensure expressions are visited!
         }
-        
-        symbolTable.exitScope();
+        if (!firstCompoundInFunction && enteredScope) {
+            symbolTable.exitScope();
+        }
         //system.out.println("[EXIT] Compound Statement Scope at level " + level);
 		//printer.printLevel("[EXIT] Compound Statement Scope at level " + level, level);
     }    
@@ -259,7 +268,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     public void visit(CallExp node, int level) {
         //system.out.println("[VISIT] CallExp: Calling function '" + node.func + "' at level " + level);
 		//printer.printLevel("[VISIT] CallExp: Calling function '" + node.func + "' at level " + level, level);
-        SymbolEntry entry = symbolTable.lookupGlobal(node.func);
+        SymbolEntry entry = symbolTable.lookup(node.func);
         if (entry == null) {
             errorOutput = errorOutput + "\n[ERROR] Function '" + node.func + "' is undefined" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;

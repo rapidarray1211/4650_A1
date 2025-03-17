@@ -1,5 +1,10 @@
+int fun(int g){
+    int y; int x;
+    return x;
+}
+
 void main(void) {
     int a[2];
     int x;
-    a = 5;
+    x = fun(6);
 }

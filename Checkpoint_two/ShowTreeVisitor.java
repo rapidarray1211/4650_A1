@@ -192,10 +192,11 @@ public class ShowTreeVisitor implements AbsynVisitor {
 	  printer.printLevel("RETURN: ", level);
       exp.return_type.accept(this, level);
     }
-    while (exp.parameters != null && exp.parameters.head != null ) {
-      exp.parameters.head.accept(this, level);
-      exp.parameters = exp.parameters.tail;
-    }
+    exp.parameters.accept(this, level);
+    // while (exp.parameters != null && exp.parameters.head != null ) {
+    //   exp.parameters.head.accept(this, level);
+    //   exp.parameters = exp.parameters.tail;
+    // }
     if (exp.body != null) {
       exp.body.accept(this, level);
     }
@@ -242,11 +243,13 @@ public class ShowTreeVisitor implements AbsynVisitor {
   }
 
   public void visit( VarDecList exp, int level ) {
+    printer.printLevel("VarDecList: ", level);
+    level++;
     while( exp != null ) {
       if (exp.head != null) {
         exp.head.accept( this, level );
-        exp = exp.tail;
       }
+      exp = exp.tail;
     } 
   }
 
