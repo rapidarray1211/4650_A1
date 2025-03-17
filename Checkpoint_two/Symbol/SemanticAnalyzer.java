@@ -313,22 +313,30 @@ public class SemanticAnalyzer implements AbsynVisitor {
             int argDim = 0;
     
             if (args.head instanceof BoolExp) {
-                argType = 0; 
+                argType = 0; // Bool type
             } else if (args.head instanceof IntExp) {
-                argType = 1; 
+                argType = 1; // Int type
             } else if (args.head instanceof VarExp) {
                 VarExp varExp = (VarExp) args.head;
                 if (varExp.variable instanceof SimpleVar) {
-                    SymbolEntry varEntry = symbolTable.lookup(((SimpleVar) varExp.variable).name);
+                    String varName = ((SimpleVar) varExp.variable).name;
+                    SymbolEntry varEntry = symbolTable.lookup(varName);
                     if (varEntry != null) {
                         argType = varEntry.type;
-                        argDim = varEntry.dim;
+                        argDim = varEntry.dim; // Store actual dimension
+                    } else {
+                        errorOutput = errorOutput + "\n[ERROR] Variable '" + varName + "' is undeclared at line " + (node.row + 1) + " and column " + (node.col + 1);
+                        errorFlag = true;
                     }
                 } else if (varExp.variable instanceof IndexVar) {
-                    SymbolEntry varEntry = symbolTable.lookup(((IndexVar) varExp.variable).name);
+                    String varName = ((IndexVar) varExp.variable).name;
+                    SymbolEntry varEntry = symbolTable.lookup(varName);
                     if (varEntry != null) {
                         argType = varEntry.type;
-                        argDim = 0; 
+                        argDim = 0;  // Indexing an array results in a scalar value
+                    } else {
+                        errorOutput = errorOutput + "\n[ERROR] Indexed variable '" + varName + "' is undeclared at line " + (node.row + 1) + " and column " + (node.col + 1);
+                        errorFlag = true;
                     }
                 }
             }
@@ -340,19 +348,35 @@ public class SemanticAnalyzer implements AbsynVisitor {
             actualArgCount++;
         }
     
+        // 🔹 Check for argument count mismatch
         if (actualArgCount != expectedArgCount) {
             errorOutput = errorOutput + "\n[ERROR] Function '" + node.func + "' expects " + expectedArgCount + " arguments but got " + actualArgCount + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
             return;
         }
     
+        // 🔹 Validate argument types
         for (int i = 0; i < expectedArgCount; i++) {
-            if (!expectedTypes.get(i).equals(actualTypes.get(i)) || !expectedDims.get(i).equals(actualDims.get(i))) {
-                errorOutput = errorOutput + "\n[ERROR] Argument " + (i + 1) + " of function '" + node.func + "' expects type " + expectedTypes.get(i) + " with dimension " + expectedDims.get(i) + " but got type " + actualTypes.get(i) + " with dimension " + actualDims.get(i) + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            boolean expectedIsArray = expectedDims.get(i) > 0; // True if expected parameter is an array
+            boolean actualIsArray = actualDims.get(i) > 0;     // True if argument is an array
+    
+            // Ensure expected arrays receive arrays and scalars receive scalars
+            if (expectedIsArray != actualIsArray) {
+                errorOutput = errorOutput + "\n[ERROR] Argument " + (i + 1) + " of function '" + node.func + "' expects " + 
+                              (expectedIsArray ? "an array" : "a scalar") + " but got " + 
+                              (actualIsArray ? "an array" : "a scalar") + 
+                              " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                errorFlag = true;
+            } 
+    
+            // Ensure base types (`int`, `bool`) match, but ignore specific array sizes
+            else if (!expectedTypes.get(i).equals(actualTypes.get(i))) {
+                errorOutput = errorOutput + "\n[ERROR] Argument " + (i + 1) + " of function '" + node.func + "' expects type '" + expectedTypes.get(i) + "' but got '" + actualTypes.get(i) + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
                 errorFlag = true;
             }
         }
     }
+    
     
     
 
