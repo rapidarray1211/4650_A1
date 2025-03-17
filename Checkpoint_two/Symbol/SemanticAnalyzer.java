@@ -202,6 +202,12 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 varName = ((SimpleVar) varExp.variable).name;
             } else if (varExp.variable instanceof IndexVar) {
                 varName = ((IndexVar) varExp.variable).name;
+                String indexType = getExpressionType(((IndexVar) varExp.variable).index);
+                if (!indexType.equals("int")) {
+                    errorOutput = errorOutput + "\n[ERROR] Array index must be of type int but is instead type " + indexType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                    errorFlag = true;
+                    return;
+                }
             }
     
             if (varName != null) {
@@ -454,15 +460,17 @@ public class SemanticAnalyzer implements AbsynVisitor {
     }
 
     public void visit(IndexVar node, int level) {
+        System.out.println("TESTING HERE HEREH ERHE ERHE HRHE ");
         SymbolEntry entry = symbolTable.lookup(node.name);
         if (entry == null) {
             errorOutput = errorOutput + "Error: Undeclared array variable '" + node.name + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
-        } else if (entry.dim <= 0) {
+        } else if (entry.dim <=  0) {
             errorOutput = errorOutput + "Error: '" + node.name + "' is not an array" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
-        if (node.index instanceof IntExp) {
+        System.out.println("\n\nTESTING TESTING");
+        if (getExpressionType(node.index).equals("int")) {
             //system.out.println("[INFO] Valid integer index for array '" + node.name + "'.");
 			//printer.printLevel("[INFO] Valid integer index for array '" + node.name + "'.", level);
         } else {
