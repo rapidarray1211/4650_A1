@@ -114,6 +114,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
             node.body.accept(this, level + 1);
             if (!currentFunctionReturnType.equals("void") && !hasReturn && !node.func_name.equals("main")) {
+                errorFlag = true;
                 errorOutput = errorOutput + "\n[ERROR] Function '" + node.func_name + "' must have a return statement at line " + (node.row + 1) + " and column " + (node.col + 1);
             }
             // symbolTable.exitScope();

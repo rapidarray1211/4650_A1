@@ -1,5 +1,5 @@
 int global;
 bool foo(void) {
     int x;
-    return x;
+    bool p;
 }
