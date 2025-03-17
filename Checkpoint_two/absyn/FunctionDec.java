@@ -18,4 +18,9 @@ public class FunctionDec extends Dec{
         visitor.visit( this, level );
     }
 
+    @Override
+    public NameTy getType(){
+        return type;
+    }
+
 }

@@ -16,4 +16,10 @@ public class ArrayDec extends VarDec{
     public void accept( AbsynVisitor visitor, int level ) {
         visitor.visit( this, level );
     }
+
+    @Override
+    public NameTy getType(){
+        return type;
+    }
+
 }

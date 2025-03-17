@@ -183,11 +183,11 @@ public class ShowTreeVisitor implements AbsynVisitor {
     indent(level);
     level++;
     symbolCount++;
-    System.out.println("FunctionDec " + exp.func_name);
-    if (exp.return_type != null) {
+    System.out.println("FunctionDec " + exp.name);
+    if (exp.type != null) {
       indent(level);
       System.out.print("RETURN: ");
-      exp.return_type.accept(this, level);
+      exp.type.accept(this, level);
     }
     while (exp.parameters != null && exp.parameters.head != null ) {
       exp.parameters.head.accept(this, level);
