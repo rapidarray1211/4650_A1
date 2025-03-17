@@ -436,7 +436,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
         node.exp.accept(this, level);
         String returnType = getExpressionType(node.exp);
-        if (!returnType.equals(currentFunctionReturnType)) {
+        if (!returnType.equals(currentFunctionReturnType) && !currentFunctionReturnType.equals("void")) {
             errorOutput = errorOutput + "\n[ERROR] Function must return '" + currentFunctionReturnType + "', but got '" + returnType + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
