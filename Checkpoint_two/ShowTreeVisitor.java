@@ -211,16 +211,16 @@ public class ShowTreeVisitor implements AbsynVisitor {
     // indent(level);
     switch (exp.type) {
       case 0:
-		printer.printLevel("NameTy: BOOLEAN", level);
+		printer.printMsg("NameTy: BOOLEAN");
         break;
       case 1:
-		printer.printLevel("NameTy: INT", level);
+		printer.printMsg("NameTy: INT");
         break;
       case 2:
-		printer.printLevel("NameTy: VOID", level);
+		printer.printMsg("NameTy: VOID");
         break;
       case 3:
-		printer.printLevel("NameTy: NULL", level);
+		printer.printMsg("NameTy: NULL");
         break;
     }
   }
