@@ -1,6 +1,22 @@
-int global;
-bool foo(void) {
+int fun(int fff ) {
+    int x; int y;
+    x = x * 2 + 1;
+    y = x + foo();
+}
+
+void main(void) {
+    int a[2]; int x;
+    a[x] = 1;
+    a[foo()] = 2;
+}
+void main(void) {
     int x;
-    bool p;
-    return int;
+    x = fun(6);
+}
+
+
+void funtwo(void) {
+    int x;
+    x = 2;
+    return x;
 }

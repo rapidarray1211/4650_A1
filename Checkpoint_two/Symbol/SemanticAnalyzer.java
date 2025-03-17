@@ -97,7 +97,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 errorFlag = true;
                 errorOutput = errorOutput + "\n[ERROR] Function prototype for '" + node.func_name + "' is re-declared" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             } else {
-                symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0);
+                if (!symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0)) {
+                    errorFlag = true;
+                    errorOutput = errorOutput + "\n[ERROR] Duplicate function declaration for '" + node.func_name + "' at line " + (node.row + 1) + " and column " + (node.col + 1);    
+                }
                 //System.out.println("[PROTOTYPE] Declared function prototype '" + node.func_name + "'");
 				//printer.printLevel("[PROTOTYPE] Declared function prototype '" + node.func_name + "'", level);
             }
@@ -113,7 +116,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
             } else {
                 //system.out.println("[DEFINE] Declaring function '" + node.func_name + "'");
 				//printer.printLevel("[DEFINE] Declaring function '" + node.func_name + "'", level);
-                symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0);
+                if (!symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0)) {
+                    errorFlag = true;
+                    errorOutput = errorOutput + "\n[ERROR] Duplicate function declaration for '" + node.func_name + "' at line " + (node.row + 1) + " and column " + (node.col + 1);    
+                }
             }
 
             // symbolTable.enterScope();
@@ -513,7 +519,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
             if (entry != null) {
                 //system.out.println("[LOOKUP] Function '" + callExp.func + "' returns type '" + getTypeFromEntry(entry) + "'");
-				printer.printMsg("[LOOKUP] Function '" + callExp.func + "' returns type '" + getTypeFromEntry(entry) + "'");
+				//printer.printMsg("[LOOKUP] Function '" + callExp.func + "' returns type '" + getTypeFromEntry(entry) + "'");
                 return getTypeFromEntry(entry);
             } else {
                 return "unknown";

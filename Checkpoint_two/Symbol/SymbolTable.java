@@ -47,7 +47,7 @@ public class SymbolTable {
     public boolean insert(String name, int type, int dim, int offset, int pc) {
         // System.out.println("[INSERT] Attempting to insert '" + name + "' at Scope: " + currentScope);
         if (table.containsKey(name) && table.get(name).scope == currentScope) {
-            System.out.println("[ERROR] Duplicate Declaration: '" + name + "' already exists in Scope: " + currentScope);
+            //System.out.println("[ERROR] Duplicate Declaration: '" + name + "' already exists in Scope: " + currentScope);
             return false;
         }
         table.put(name, new SymbolEntry(type, currentScope, dim, offset, pc));
