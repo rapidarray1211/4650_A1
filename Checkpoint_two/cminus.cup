@@ -557,7 +557,7 @@ factor ::= LPAREN expression:e RPAREN
             //System.out.println("DEBUG [factor]: Numeric constant "); 
             :} 
          | TRUTH:t 
-         {: RESULT = new BoolExp(tleft,tright,(boolean)t);
+         {: RESULT = new BoolExp(tleft,tright,(String)t);
             //System.out.println("DEBUG [factor]: Boolean constant "); 
             :};
 
