@@ -186,13 +186,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
         //system.out.println("[EXIT] Compound Statement Scope at level " + level);
 		//printer.printLevel("[EXIT] Compound Statement Scope at level " + level, level);
     }    
-
     @Override
     public void visit(AssignExp node, int level) {
-        //system.out.println("[VISIT] AssignExp at level " + level);
-		//printer.printLevel("[VISIT] AssignExp at level " + level, level);
-    
         String lhsType = null;
+        int lhsDim = 0;
         String varName = null;
     
         if (node.lhs instanceof VarExp) {
@@ -212,19 +209,17 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
             if (varName != null) {
                 SymbolEntry lhsEntry = symbolTable.lookup(varName);
-    
                 if (lhsEntry == null) {
-                    errorOutput = errorOutput + "\n[ERROR] Variable '" + varName + "' is undeclared " + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                    errorOutput = errorOutput + "\n[ERROR] Variable '" + varName + "' is undeclared at line " + (node.row + 1) + " and column " + (node.col + 1);
                     errorFlag = true;
                     return;
                 } else {
                     lhsType = getTypeFromEntry(lhsEntry);
-                    //system.out.println("[LOOKUP] Found variable '" + varName + "' of type '" + lhsType + "' in Scope: " + lhsEntry.scope);
-					//printer.printLevel("[LOOKUP] Found variable '" + varName + "' of type '" + lhsType + "' in Scope: " + lhsEntry.scope, level);
+                    lhsDim = lhsEntry.dim;
                 }
             }
         } else {
-            errorOutput = errorOutput + "\n[ERROR] LHS of assignment is not a variable" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] LHS of assignment is not a variable at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
             return;
         }
@@ -232,7 +227,13 @@ public class SemanticAnalyzer implements AbsynVisitor {
         String rhsType = getExpressionType(node.rhs);
     
         if (lhsType != null && rhsType != null && !lhsType.equals(rhsType)) {
-            errorOutput = errorOutput + "\n[ERROR] Type mismatch in assignment: Cannot assign '" + rhsType + "' to '" + lhsType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Type mismatch in assignment: Cannot assign '" + rhsType + "' to '" + lhsType + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorFlag = true;
+        }
+    
+        // Check for invalid assignment of a scalar value to an array
+        if (lhsDim > 0 && varName != null && node.lhs instanceof VarExp && ((VarExp) node.lhs).variable instanceof SimpleVar) {
+            errorOutput = errorOutput + "\n[ERROR] Cannot assign a scalar value to an array '" + varName + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
     
