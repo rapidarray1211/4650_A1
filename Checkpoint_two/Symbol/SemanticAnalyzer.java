@@ -280,11 +280,17 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
     @Override
     public void visit(OpExp node, int level) {
-        String leftType = getExpressionType(node.left);
-        String rightType = getExpressionType(node.right);
+        String leftType = "unknown";
+        String rightType = "unknown";
     
         int leftDim = 0;
         int rightDim = 0;
+    
+        boolean isUnaryMinus = (node.op == OpExp.UMINUS);
+        
+        // 🔹 Handle Binary Operations
+        leftType = getExpressionType(node.left);
+        rightType = getExpressionType(node.right);
     
         if (node.left instanceof VarExp) {
             VarExp varExp = (VarExp) node.left;
@@ -292,7 +298,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 SymbolEntry varEntry = symbolTable.lookup(((SimpleVar) varExp.variable).name);
                 if (varEntry != null) leftDim = varEntry.dim;
             } else if (varExp.variable instanceof IndexVar) {
-                leftDim = 0;
+                leftDim = 0;  // Indexing an array results in a scalar
             }
         }
     
@@ -306,18 +312,27 @@ public class SemanticAnalyzer implements AbsynVisitor {
             }
         }
     
+        // 🔹 Prevent operations involving arrays
         if (leftDim > 0 || rightDim > 0) {
             errorOutput = errorOutput + "\n[ERROR] Cannot perform arithmetic operation on arrays at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
             return;
         }
+        if (isUnaryMinus && node.left instanceof NilExp) {
+            rightType = getExpressionType(node.right);
     
-        if (!leftType.equals(rightType)) {
-            errorOutput = errorOutput + "\n[ERROR] Type mismatch in operation: Cannot apply operator to '" + leftType + "' and '" + rightType + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
-            errorFlag = true;
+            if (!rightType.equals("int")) {
+                errorOutput = errorOutput + "\n[ERROR] Unary '-' can only be applied to integers at line " + (node.row + 1) + " and column " + (node.col + 1);
+                errorFlag = true;
+            }
             return;
         }
+        else if (!leftType.equals(rightType)) {
+            errorOutput = errorOutput + "\n[ERROR] Type mismatch in operation: Cannot apply operator to '" + leftType + "' and '" + rightType + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorFlag = true;
+        }
     }
+    
     
 
     @Override
@@ -750,13 +765,34 @@ public class SemanticAnalyzer implements AbsynVisitor {
             String leftType = getExpressionType(opExp.left);
             String rightType = getExpressionType(opExp.right);
     
+            if (opExp.op == OpExp.EQ || opExp.op == OpExp.LT || opExp.op == OpExp.GT) {
+                return "bool";
+            }
+            boolean isUnaryMinus = (opExp.op == OpExp.UMINUS);
+            if (isUnaryMinus && opExp.left instanceof NilExp) {
+                rightType = getExpressionType(opExp.right);
+        
+                if (!rightType.equals("int")) {
+                    errorOutput = errorOutput + "\n[ERROR] Unary '-' can only be applied to integers at line " + (opExp.row + 1) + " and column " + (opExp.col + 1);
+                    errorFlag = true;
+                }
+                return "int";
+            }
+
+            boolean isUnaryNot = (opExp.op == OpExp.NOT);
+            if (isUnaryNot && opExp.left instanceof NilExp) {
+                rightType = getExpressionType(opExp.right);
+        
+                if (!rightType.equals("bool")) {
+                    errorOutput = errorOutput + "\n[ERROR] Unary '~' can only be applied to bools at line " + (opExp.row + 1) + " and column " + (opExp.col + 1);
+                    errorFlag = true;
+                }
+                return "bool";
+            }
+                
             if (!leftType.equals(rightType)) {
                 // errorOutput = errorOutput + "\n[ERROR] Type mismatch in operation: Cannot apply operator to '" + leftType + "' and '" + rightType + " at line " + (node.row + 1) + " and column " + (node.col + 1));
                 return "unknown";
-            }
-    
-            if (opExp.op == OpExp.EQ || opExp.op == OpExp.LT || opExp.op == OpExp.GT) {
-                return "bool";
             }
     
             return leftType; 
