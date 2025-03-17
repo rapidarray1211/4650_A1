@@ -87,7 +87,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
       default:
 		    printer.printLevelNoLn("Unrecognized operator at line " + exp.row + " and column " + exp.col, level);
     }
-	  printer.printLevel(operator, level);
+	  printer.printMsg(operator);
     level++;
     if (exp.left != null)
        exp.left.accept( this, level );

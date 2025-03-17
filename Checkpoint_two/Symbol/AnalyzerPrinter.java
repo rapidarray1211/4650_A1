@@ -90,7 +90,7 @@ public class AnalyzerPrinter {
             }
         }
         else{
-            System.out.println(msg);
+            System.out.print(msg);
         }
 
     }
