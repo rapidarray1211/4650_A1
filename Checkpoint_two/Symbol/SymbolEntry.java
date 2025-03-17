@@ -1,10 +1,23 @@
 package Symbol;
+import java.util.List;
 public class SymbolEntry {
     int scope;     // Scope level (0 = global, 1 = function, etc.)
     int type;      // Data type (e.g., INT = 0, VOID = 1)
     int dim;
     int offset;    // Memory offset for storage
     int pc;
+    List <Integer> paramTypes;
+    List <Integer> paramDims;
+
+    public SymbolEntry(int type, int scope, int dim, int offset, int pc, List<Integer> paramTypes, List<Integer> paramDims) {
+        this.type = type;
+        this.scope = scope;
+        this.dim = dim;
+        this.offset = offset;
+        this.pc = pc;
+        this.paramTypes = paramTypes;
+        this.paramDims = paramDims;
+    }
 
     public SymbolEntry(int type, int scope, int dimensions, int offset, int pc) {
         this.scope = scope;
@@ -12,6 +25,8 @@ public class SymbolEntry {
         this.dim = dimensions;
         this.offset = offset * dimensions;
         this.pc = pc;
+        this.paramTypes = null;
+        this.paramDims = null;
     }
 
     @Override

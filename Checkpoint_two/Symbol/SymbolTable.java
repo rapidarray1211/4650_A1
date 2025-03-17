@@ -3,6 +3,7 @@ package Symbol;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.List;
 
 public class SymbolTable {
     private HashMap<String, SymbolEntry> table;
@@ -51,6 +52,17 @@ public class SymbolTable {
             return false;
         }
         table.put(name, new SymbolEntry(type, currentScope, dim, offset, pc));
+        //System.out.println("[SUCCESS] Inserted '" + name + "' (Type: " + type + ", Dim: " + dim + ", Offset: " + offset + ", PC: " + pc + ") in Scope: " + currentScope);
+        return true;
+    }
+
+    public boolean insert(String name, int type, int dim, int offset, int pc, List<Integer> paramTypes, List<Integer> paramDims) {
+        // System.out.println("[INSERT] Attempting to insert '" + name + "' at Scope: " + currentScope);
+        if (table.containsKey(name) && table.get(name).scope == currentScope) {
+            //System.out.println("[ERROR] Duplicate Declaration: '" + name + "' already exists in Scope: " + currentScope);
+            return false;
+        }
+        table.put(name, new SymbolEntry(type, currentScope, dim, offset, pc, paramTypes, paramDims));
         //System.out.println("[SUCCESS] Inserted '" + name + "' (Type: " + type + ", Dim: " + dim + ", Offset: " + offset + ", PC: " + pc + ") in Scope: " + currentScope);
         return true;
     }
