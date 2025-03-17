@@ -50,7 +50,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
   }
 
   public void visit( IntExp exp, int level ) {
-	printer.printLevel("IntExp:", level);
+	printer.printLevel("IntExp: " + exp.value, level);
   }
 
 
@@ -118,9 +118,8 @@ public class ShowTreeVisitor implements AbsynVisitor {
 
 //Should level be in this order?
   public void visit( VarExp exp, int level ) {
-
-    level++;
     printer.printLevel("VarExp:",level);
+    level++;
     if (exp.variable != null) {
       exp.variable.accept(this, level);
     }
@@ -134,12 +133,13 @@ public class ShowTreeVisitor implements AbsynVisitor {
 
   public void visit( ArrayDec exp, int level ) {
 
-    level++;
+    // level++;
     symbolCount++;
-
-	printer.printLevel("Name: " + exp.name,level);
+    printer.printLevel("ArrayDec: " + exp.name, level);
     if (exp.size != 0) {
-	  printer.printLevel("Size: " + exp.size, level);
+      level++;
+	    printer.printLevel("Size: " + exp.size, level);
+      // level--;
     }
     exp.type.accept(this, level);
     
@@ -211,16 +211,16 @@ public class ShowTreeVisitor implements AbsynVisitor {
     // indent(level);
     switch (exp.type) {
       case 0:
-		printer.printMsg("NameTy: BOOLEAN");
+		printer.printLevel("NameTy: BOOLEAN", level);
         break;
       case 1:
-		printer.printMsg("NameTy: INT");
+		printer.printLevel("NameTy: INT", level);
         break;
       case 2:
-		printer.printMsg("NameTy: VOID");
+		printer.printLevel("NameTy: VOID", level);
         break;
       case 3:
-		printer.printMsg("NameTy: NULL");
+		printer.printLevel("NameTy: NULL", level);
         break;
     }
   }
@@ -229,7 +229,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
     symbolCount++;
 	  printer.printLevel("SimpleDec: " + exp.name, level);
     level++;
-    printer.indent(level);
+    // printer.indent(level);
     if (exp.type != null) {
       exp.type.accept(this, level);
     }
