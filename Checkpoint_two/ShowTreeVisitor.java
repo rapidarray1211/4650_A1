@@ -87,7 +87,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
       default:
 		    printer.printLevelNoLn("Unrecognized operator at line " + exp.row + " and column " + exp.col, level);
     }
-	  printer.printLevel(operator, level);
+	  printer.printMsg(operator);
     level++;
     if (exp.left != null)
        exp.left.accept( this, level );
@@ -211,16 +211,16 @@ public class ShowTreeVisitor implements AbsynVisitor {
     // indent(level);
     switch (exp.type) {
       case 0:
-		printer.printLevel("NameTy: BOOLEAN", level);
+		printer.printMsg("NameTy: BOOLEAN");
         break;
       case 1:
-		printer.printLevel("NameTy: INT", level);
+		printer.printMsg("NameTy: INT");
         break;
       case 2:
-		printer.printLevel("NameTy: VOID", level);
+		printer.printMsg("NameTy: VOID");
         break;
       case 3:
-		printer.printLevel("NameTy: NULL", level);
+		printer.printMsg("NameTy: NULL");
         break;
     }
   }
