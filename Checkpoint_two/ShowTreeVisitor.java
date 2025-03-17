@@ -84,6 +84,8 @@ public class ShowTreeVisitor implements AbsynVisitor {
       case OpExp.UMINUS:
         operator = " - ";
         break;
+      case OpExp.NOT:
+        operator = " ~ ";
       default:
 		    printer.printLevelNoLn("Unrecognized operator at line " + exp.row + " and column " + exp.col, level);
     }

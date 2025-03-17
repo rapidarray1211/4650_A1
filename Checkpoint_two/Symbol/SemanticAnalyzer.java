@@ -287,7 +287,8 @@ public class SemanticAnalyzer implements AbsynVisitor {
         int rightDim = 0;
     
         boolean isUnaryMinus = (node.op == OpExp.UMINUS);
-        
+        boolean isUnaryNot = (node.op == OpExp.NOT);
+
         // 🔹 Handle Binary Operations
         leftType = getExpressionType(node.left);
         rightType = getExpressionType(node.right);
@@ -323,6 +324,15 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
             if (!rightType.equals("int")) {
                 errorOutput = errorOutput + "\n[ERROR] Unary '-' can only be applied to integers at line " + (node.row + 1) + " and column " + (node.col + 1);
+                errorFlag = true;
+            }
+            return;
+        }
+        else if (isUnaryNot && node.left instanceof NilExp) {
+            rightType = getExpressionType(node.right);
+    
+            if (!rightType.equals("bool")) {
+                errorOutput = errorOutput + "\n[ERROR] Unary '~' can only be applied to bools at line " + (node.row + 1) + " and column " + (node.col + 1);
                 errorFlag = true;
             }
             return;
