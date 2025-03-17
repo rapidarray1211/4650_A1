@@ -1,9 +1,11 @@
-void printResult(int num, bool check) {
-    if (check) {
-        isEven(num);
-    } else {
-        isEven(0);
+int fun(int arr[], int size) {
+    int i;
+    int sum;
+    sum = 0;
+    i = 0;
+    while (i < size) {
+        sum = sum + arr;
+        i = i + 1;
     }
-
-    return;
+    return sum;
 }

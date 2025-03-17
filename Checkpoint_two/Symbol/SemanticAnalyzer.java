@@ -279,15 +279,45 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
     @Override
     public void visit(OpExp node, int level) {
-        //system.out.println("[VISIT] OpExp at level " + level);
-		//printer.printLevel("[VISIT] OpExp at level " + level, level);
-        node.left.accept(this, level);
-        node.right.accept(this, level);
-        if (!isTypeCompatible(node.left, node.right)) {
-            errorOutput = errorOutput + "\n[ERROR] Type mismatch in binary expression " + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+        String leftType = getExpressionType(node.left);
+        String rightType = getExpressionType(node.right);
+    
+        int leftDim = 0;
+        int rightDim = 0;
+    
+        if (node.left instanceof VarExp) {
+            VarExp varExp = (VarExp) node.left;
+            if (varExp.variable instanceof SimpleVar) {
+                SymbolEntry varEntry = symbolTable.lookup(((SimpleVar) varExp.variable).name);
+                if (varEntry != null) leftDim = varEntry.dim;
+            } else if (varExp.variable instanceof IndexVar) {
+                leftDim = 0;
+            }
+        }
+    
+        if (node.right instanceof VarExp) {
+            VarExp varExp = (VarExp) node.right;
+            if (varExp.variable instanceof SimpleVar) {
+                SymbolEntry varEntry = symbolTable.lookup(((SimpleVar) varExp.variable).name);
+                if (varEntry != null) rightDim = varEntry.dim;
+            } else if (varExp.variable instanceof IndexVar) {
+                rightDim = 0;
+            }
+        }
+    
+        if (leftDim > 0 || rightDim > 0) {
+            errorOutput = errorOutput + "\n[ERROR] Cannot perform arithmetic operation on arrays at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
+            return;
+        }
+    
+        if (!leftType.equals(rightType)) {
+            errorOutput = errorOutput + "\n[ERROR] Type mismatch in operation: Cannot apply operator to '" + leftType + "' and '" + rightType + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorFlag = true;
+            return;
         }
     }
+    
 
     @Override
     public void visit(CallExp node, int level) {
