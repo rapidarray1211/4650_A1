@@ -12,6 +12,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     private String errorOutput = "";
 	private AnalyzerPrinter printer;
     private boolean hasReturn = false;
+    private boolean mainDeclared = false;
 
     public SemanticAnalyzer(AnalyzerPrinter printer) {
         symbolTable = new SymbolTable();
@@ -30,6 +31,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
         symbolTable.printTable();
         System.out.println();
         System.out.println("[END] Semantic Analysis Complete.");
+        if (!mainDeclared) {
+            errorFlag = true;
+            errorOutput = errorOutput + "\n[ERROR] Missing main";
+        }
         if (!errorFlag) {
             System.out.println("No semantic errors");
         }
@@ -70,6 +75,15 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 currentFunctionReturnType = "null";
         }
 
+        if (mainDeclared) {
+            errorFlag = true;
+            errorOutput = errorOutput + "\n[ERROR] Function '" + node.func_name + "' is declared after main when main must be the last function " + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+        }
+
+        if (node.func_name.equals("main")) {
+            mainDeclared = true;
+        }
+
         VarDecList params = node.parameters;
         while (params != null && params.head != null) {
             paramTypes.add(getType(params.head));
@@ -83,7 +97,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 errorFlag = true;
                 errorOutput = errorOutput + "\n[ERROR] Function prototype for '" + node.func_name + "' is re-declared" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             } else {
-                symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0);
+                if (!symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0)) {
+                    errorFlag = true;
+                    errorOutput = errorOutput + "\n[ERROR] Duplicate function declaration for '" + node.func_name + "' at line " + (node.row + 1) + " and column " + (node.col + 1);    
+                }
                 //System.out.println("[PROTOTYPE] Declared function prototype '" + node.func_name + "'");
 				//printer.printLevel("[PROTOTYPE] Declared function prototype '" + node.func_name + "'", level);
             }
@@ -99,7 +116,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
             } else {
                 //system.out.println("[DEFINE] Declaring function '" + node.func_name + "'");
 				//printer.printLevel("[DEFINE] Declaring function '" + node.func_name + "'", level);
-                symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0);
+                if (!symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0)) {
+                    errorFlag = true;
+                    errorOutput = errorOutput + "\n[ERROR] Duplicate function declaration for '" + node.func_name + "' at line " + (node.row + 1) + " and column " + (node.col + 1);    
+                }
             }
 
             // symbolTable.enterScope();
@@ -114,6 +134,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
             node.body.accept(this, level + 1);
             if (!currentFunctionReturnType.equals("void") && !hasReturn && !node.func_name.equals("main")) {
+                errorFlag = true;
                 errorOutput = errorOutput + "\n[ERROR] Function '" + node.func_name + "' must have a return statement at line " + (node.row + 1) + " and column " + (node.col + 1);
             }
             // symbolTable.exitScope();
@@ -181,6 +202,12 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 varName = ((SimpleVar) varExp.variable).name;
             } else if (varExp.variable instanceof IndexVar) {
                 varName = ((IndexVar) varExp.variable).name;
+                String indexType = getExpressionType(((IndexVar) varExp.variable).index);
+                if (!indexType.equals("int")) {
+                    errorOutput = errorOutput + "\n[ERROR] Array index must be of type int but is instead type " + indexType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                    errorFlag = true;
+                    return;
+                }
             }
     
             if (varName != null) {
@@ -437,11 +464,11 @@ public class SemanticAnalyzer implements AbsynVisitor {
         if (entry == null) {
             errorOutput = errorOutput + "Error: Undeclared array variable '" + node.name + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
-        } else if (entry.dim <= 0) {
+        } else if (entry.dim <=  0) {
             errorOutput = errorOutput + "Error: '" + node.name + "' is not an array" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
-        if (node.index instanceof IntExp) {
+        if (getExpressionType(node.index).equals("int")) {
             //system.out.println("[INFO] Valid integer index for array '" + node.name + "'.");
 			//printer.printLevel("[INFO] Valid integer index for array '" + node.name + "'.", level);
         } else {
@@ -498,7 +525,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
             if (entry != null) {
                 //system.out.println("[LOOKUP] Function '" + callExp.func + "' returns type '" + getTypeFromEntry(entry) + "'");
-				printer.printMsg("[LOOKUP] Function '" + callExp.func + "' returns type '" + getTypeFromEntry(entry) + "'");
+				//printer.printMsg("[LOOKUP] Function '" + callExp.func + "' returns type '" + getTypeFromEntry(entry) + "'");
                 return getTypeFromEntry(entry);
             } else {
                 return "unknown";

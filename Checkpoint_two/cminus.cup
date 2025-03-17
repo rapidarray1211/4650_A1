@@ -49,6 +49,7 @@ parser code {:
     @Override
    public void syntax_error(Symbol cur_token) {
       // Suppress default expected token messages
+      valid = false;
       return;
    }
    
@@ -59,6 +60,7 @@ parser code {:
        'message' and then exit.*/
     public void report_fatal_error(String message, Object info) {
         report_error(message, info);
+        valid = false;
         System.exit(1);
     }
 

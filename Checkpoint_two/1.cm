@@ -1,5 +1,5 @@
-int global;
-bool foo(void) {
+void main(void) {
+    int a[2];
     int x;
-    return x;
+    a = 5;
 }
