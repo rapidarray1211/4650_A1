@@ -41,17 +41,24 @@ class Main {
                     if (aArg){
                         aPrinter.close();
                     }
+
    
                 }
 
-                if (RUN_SEMANTIC_ANALYSIS) {
-                    System.out.println("\nStarting Semantic Analysis...");
-                    SemanticAnalyzer analyzer = new SemanticAnalyzer(sPrinter);
-                    analyzer.analyze((DecList) result);
-                    System.out.println("Semantic Analysis Completed.");
-                    if (sArg){
-                        sPrinter.close();
+                if (p.valid){
+
+                    if (RUN_SEMANTIC_ANALYSIS) {
+                        System.out.println("\nStarting Semantic Analysis...");
+                        SemanticAnalyzer analyzer = new SemanticAnalyzer(sPrinter);
+                        analyzer.analyze((DecList) result);
+                        System.out.println("Semantic Analysis Completed.");
+                        if (sArg){
+                            sPrinter.close();
+                        }
                     }
+                }
+                else{
+                    System.out.println("Errors were found in parsing, semantic analysis not started.");
                 }
             }
         } catch (Exception e) {
