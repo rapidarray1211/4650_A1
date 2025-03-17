@@ -1,37 +1,19 @@
-/* File 1: Large File that has no errors, Tests many aspects */
+/* Has additional checks for unary operators.
+   Also has variables in main in a different scope so should get lots of errors.  */
 
 void initializeArray(int arr[], int size);
 void printResult(int num, bool check);
+int sumArray(int arr[], int size);
 
 int globalVar;
 
-void initializeArray(int arr[], int size) {
-    int i;
-    i = 0;
-    while (i < size) {
-        arr[i] = i+2;
-        i = i + 1;
-    }
-}
-
-int sumArray(int arr[], int size) {
-    int i;
-    int sum;
-    sum = 0;
-    i = 0;
-    while (i < size) {
-        sum = sum + arr[i];
-        i = i + 1;
-    }
-    return sum;
-}
-
 bool isEven(int num) {
-    return (num / 2) * 2 == num;
+    return ~((num / 2) * 2 == num);
 }
-
 
 void printResult(int num, bool check) {
+
+    num = -num;
 
     if (check) {
         isEven(num);
@@ -41,9 +23,11 @@ void printResult(int num, bool check) {
 }
 
 void main(void) {
-    int arr[5];
-    int result;
-    bool flag;
+    {
+        int arr[5];
+        int result;
+        bool flag;
+    }
 
     initializeArray(arr, 5);
 

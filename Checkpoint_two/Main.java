@@ -20,12 +20,11 @@ class Main {
         aArg = checkForArg("-a", argv);
         sArg = checkForArg("-s", argv);
 
+        if (sArg) aArg = true;
+
         AnalyzerPrinter aPrinter = new AnalyzerPrinter(aFilename, aArg);
         AnalyzerPrinter sPrinter = new AnalyzerPrinter(sFilename, sArg);
 
-
-
-        if (sArg == true) aArg = true;
         try {
 			
 			System.out.println("Starting parser on file: " + argv[0]);
@@ -48,10 +47,10 @@ class Main {
                 if (p.valid){
 
                     if (RUN_SEMANTIC_ANALYSIS) {
-                        System.out.println("\nStarting Semantic Analysis...");
+                        sPrinter.printMsg("\nStarting Semantic Analysis...");
                         SemanticAnalyzer analyzer = new SemanticAnalyzer(sPrinter);
                         analyzer.analyze((DecList) result);
-                        System.out.println("Semantic Analysis Completed.");
+                        sPrinter.printMsg("Semantic Analysis Completed.");
                         if (sArg){
                             sPrinter.close();
                         }

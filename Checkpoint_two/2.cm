@@ -1,0 +1,15 @@
+/* Error1: missing main function
+   Error2: while condition is int instead of bool
+   Error3: Cannot add int to array in line 11*/
+
+int fun(int arr[], int size) {
+    int i;
+    int sum;
+    sum = 0;
+    i = 0;
+    while (i) {
+        sum = sum + arr;
+        i = i + 1;
+    }
+    return sum;
+}

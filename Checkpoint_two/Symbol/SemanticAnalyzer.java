@@ -16,7 +16,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     private boolean firstCompoundInFunction = false;
 
     public SemanticAnalyzer(AnalyzerPrinter printer) {
-        symbolTable = new SymbolTable();
+        symbolTable = new SymbolTable(printer);
 		this.printer = printer;
     }
 	
@@ -662,7 +662,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         String leftType = getExpressionType(left);
         String rightType = getExpressionType(right);
     
-        System.out.println("[DEBUG] Comparing types: " + leftType + " vs " + rightType);
+        //System.out.println("[DEBUG] Comparing types: " + leftType + " vs " + rightType);
 		//printer.printMsg("[DEBUG] Comparing types: " + leftType + " vs " + rightType);
     
         return leftType.equals(rightType);

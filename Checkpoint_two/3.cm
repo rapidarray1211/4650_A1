@@ -1,0 +1,21 @@
+/*Error 1: assigning invalid type to boolean in line 10
+  Error 2: trying to do operations on int and bool in line 10
+  Error 3: Function returns bool instead of int*/
+
+int fun(int arr[], int size) {
+    int i;
+    bool sum;
+    i = 0;
+    while (i < 6) {
+        sum = sum + arr[3];
+        i = i + 1;
+    }
+    return sum;
+}
+
+void main(void) {
+    int arr[5];
+    int result;
+    bool flag;
+   
+}
