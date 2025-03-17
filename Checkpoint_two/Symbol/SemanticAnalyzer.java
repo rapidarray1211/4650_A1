@@ -11,6 +11,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     private boolean errorFlag = false;
     private String errorOutput = "";
 	private AnalyzerPrinter printer;
+    private boolean hasReturn = false;
 
     public SemanticAnalyzer(AnalyzerPrinter printer) {
         symbolTable = new SymbolTable();
@@ -53,15 +54,19 @@ public class SemanticAnalyzer implements AbsynVisitor {
     public void visit(FunctionDec node, int level) {
         //System.out.println("[VISIT] FunctionDec '" + node.func_name + "' at level " + level);
 		//printer.printLevel("[VISIT] FunctionDec '" + node.func_name + "' at level " + level, level);
+        hasReturn = false;
         List<String> paramTypes = new ArrayList<>();
         switch (node.return_type.type) {
             case 0:
                 currentFunctionReturnType = "bool";
+                break;
             case 1:
                 currentFunctionReturnType = "int";
+                break;
             case 2:
                 currentFunctionReturnType = "void";
-            case 3:
+                break;
+            default:
                 currentFunctionReturnType = "null";
         }
 
@@ -76,7 +81,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         if (node.body instanceof NilExp) {
             if (existingEntry != null) {
                 errorFlag = true;
-                errorOutput = errorOutput + "[ERROR] Function prototype for '" + node.func_name + "' is re-declared" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                errorOutput = errorOutput + "\n[ERROR] Function prototype for '" + node.func_name + "' is re-declared" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             } else {
                 symbolTable.insert(node.func_name, node.return_type.type, paramTypes.size(), 0, 0);
                 //System.out.println("[PROTOTYPE] Declared function prototype '" + node.func_name + "'");
@@ -86,7 +91,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             if (existingEntry != null) {
                 if (existingEntry.dim != paramTypes.size()) {
                     errorFlag = true;
-                    errorOutput = errorOutput + "[ERROR] Function declaration for '" + node.func_name + "' does not match prototype" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                    errorOutput = errorOutput + "\n[ERROR] Function declaration for '" + node.func_name + "' does not match prototype" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
                 } else {
                     //System.out.println("[MATCH] Function '" + node.func_name + "' matches prototype.");
 					//printer.printLevel("[MATCH] Function '" + node.func_name + "' matches prototype.", level);
@@ -108,6 +113,9 @@ public class SemanticAnalyzer implements AbsynVisitor {
             }
 
             node.body.accept(this, level + 1);
+            if (!currentFunctionReturnType.equals("void") && !hasReturn && !node.func_name.equals("main")) {
+                errorOutput = errorOutput + "\n[ERROR] Function '" + node.func_name + "' must have a return statement at line " + (node.row + 1) + " and column " + (node.col + 1);
+            }
             // symbolTable.exitScope();
             //system.out.println("[EXIT] Scope for function '" + node.func_name + "'");
 			//printer.printLevel("[EXIT] Scope for function '" + node.func_name + "'", level);
@@ -122,7 +130,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         boolean success = symbolTable.insert(node.name, node.type.type, 0, 0, 0);
         if (!success) {
             errorFlag = true;
-            errorOutput = errorOutput + "[ERROR] Variable '" + node.name + "' is already declared in this scope " + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Variable '" + node.name + "' is already declared in this scope " + " at line " + (node.row + 1) + " and column " + (node.col + 1);
         }
     }
 
@@ -133,7 +141,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         boolean success = symbolTable.insert(node.name, node.type.type, node.size, 0, 0);
         if (!success) {
             errorFlag = true;
-            errorOutput = errorOutput + "[ERROR] Array '" + node.name + "' is already declared in this scope" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Array '" + node.name + "' is already declared in this scope" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
         }
     }
 
@@ -179,7 +187,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 SymbolEntry lhsEntry = symbolTable.lookup(varName);
     
                 if (lhsEntry == null) {
-                    errorOutput = errorOutput + "[ERROR] Variable '" + varName + "' is undeclared " + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                    errorOutput = errorOutput + "\n[ERROR] Variable '" + varName + "' is undeclared " + " at line " + (node.row + 1) + " and column " + (node.col + 1);
                     errorFlag = true;
                     return;
                 } else {
@@ -189,7 +197,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 }
             }
         } else {
-            errorOutput = errorOutput + "[ERROR] LHS of assignment is not a variable" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] LHS of assignment is not a variable" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
             return;
         }
@@ -197,7 +205,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         String rhsType = getExpressionType(node.rhs);
     
         if (lhsType != null && rhsType != null && !lhsType.equals(rhsType)) {
-            errorOutput = errorOutput + "[ERROR] Type mismatch in assignment: Cannot assign '" + rhsType + "' to '" + lhsType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Type mismatch in assignment: Cannot assign '" + rhsType + "' to '" + lhsType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
     
@@ -214,7 +222,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         node.left.accept(this, level);
         node.right.accept(this, level);
         if (!isTypeCompatible(node.left, node.right)) {
-            errorOutput = errorOutput + "[ERROR] Type mismatch in binary expression " + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Type mismatch in binary expression " + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
     }
@@ -225,7 +233,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 		//printer.printLevel("[VISIT] CallExp: Calling function '" + node.func + "' at level " + level, level);
         SymbolEntry entry = symbolTable.lookupGlobal(node.func);
         if (entry == null) {
-            errorOutput = errorOutput + "[ERROR] Function '" + node.func + "' is undefined" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Function '" + node.func + "' is undefined" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
             return;
         }
@@ -239,7 +247,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         }
 
         if (entry.dim != argCount) {
-            errorOutput = errorOutput + "[ERROR] Function '" + node.func + "' expects " + entry.dim + " arguments but got " + argCount + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Function '" + node.func + "' expects " + entry.dim + " arguments but got " + argCount + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
     }
@@ -253,7 +261,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         String conditionType = getExpressionType(node.test);
     
         if (!conditionType.equals("bool")) {
-            errorOutput = errorOutput + "[ERROR] Condition in if-statement must be  'bool', but got '" + conditionType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Condition in if-statement must be  'bool', but got '" + conditionType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
     
@@ -272,7 +280,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         String conditionType = getExpressionType(node.test);
     
         if (!conditionType.equals("bool")) {
-            errorOutput = errorOutput + "[ERROR] Condition in if-statement must be  'bool', but got '" + conditionType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Condition in if-statement must be  'bool', but got '" + conditionType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
         node.body.accept(this, level);
@@ -280,18 +288,19 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
     @Override
     public void visit(ReturnExp node, int level) {
+        hasReturn = true;
         //system.out.println("[VISIT] ReturnExp");
 		//printer.printLevel("[VISIT] ReturnExp", level);
     
         if (currentFunctionReturnType == null) {
-            errorOutput = errorOutput + "[ERROR] Return statement found outside of a function" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Return statement found outside of a function" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
             return;
         }
     
         if (node.exp == null) {
             if (!currentFunctionReturnType.equals("void")) {
-                errorOutput = errorOutput + "[ERROR] Missing return value in non-void function" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                errorOutput = errorOutput + "\n[ERROR] Missing return value in non-void function" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
                 errorFlag = true;
             }
             return;
@@ -299,9 +308,8 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
         node.exp.accept(this, level);
         String returnType = getExpressionType(node.exp);
-    
         if (!returnType.equals(currentFunctionReturnType)) {
-            errorOutput = errorOutput + "[ERROR] Function must return '" + currentFunctionReturnType + "', but got '" + returnType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Function must return '" + currentFunctionReturnType + "', but got '" + returnType + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
     }
@@ -317,7 +325,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             SymbolEntry entry = symbolTable.lookup(varName);
     
             if (entry == null) {
-                errorOutput = errorOutput + "[ERROR] Variable '" + varName + "' is undeclared" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                errorOutput = errorOutput + "\n[ERROR] Variable '" + varName + "' is undeclared" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
                 errorFlag = true;
             } else {
                 //system.out.println("[LOOKUP] Found variable '" + varName + "' in Scope: " + entry.scope);
@@ -328,17 +336,17 @@ public class SemanticAnalyzer implements AbsynVisitor {
             SymbolEntry entry = symbolTable.lookup(varName);
     
             if (entry == null) {
-                errorOutput = errorOutput + "[ERROR] Array '" + varName + "' is undeclared" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                errorOutput = errorOutput + "\n[ERROR] Array '" + varName + "' is undeclared" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
                 errorFlag = true;
             } else if (entry.dim <= 0) {
-                errorOutput = errorOutput + "[ERROR] '" + varName + "' is not an array "+ " at line " + (node.row + 1) + " and column " + (node.col + 1);
+                errorOutput = errorOutput + "\n[ERROR] '" + varName + "' is not an array "+ " at line " + (node.row + 1) + " and column " + (node.col + 1);
                 errorFlag = true;
             } else {
                 //system.out.println("[LOOKUP] Found array '" + varName + "' in Scope: " + entry.scope);
 				//printer.printLevel("[LOOKUP] Found array '" + varName + "' in Scope: " + entry.scope, level);
             }
         } else {
-            errorOutput = errorOutput + "[ERROR] Unknown variable type in VarExp" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Unknown variable type in VarExp" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
     }
@@ -437,7 +445,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             //system.out.println("[INFO] Valid integer index for array '" + node.name + "'.");
 			//printer.printLevel("[INFO] Valid integer index for array '" + node.name + "'.", level);
         } else {
-            errorOutput = errorOutput + "[ERROR] Array index for '" + node.name + "' must be an integer" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Array index for '" + node.name + "' must be an integer" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
         node.index.accept(this, level);
@@ -448,7 +456,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         String rightType = getExpressionType(right);
     
         //system.out.println("[DEBUG] Comparing types: " + leftType + " vs " + rightType);
-		printer.printMsg("[DEBUG] Comparing types: " + leftType + " vs " + rightType);
+		//printer.printMsg("[DEBUG] Comparing types: " + leftType + " vs " + rightType);
     
         return leftType.equals(rightType);
     }
@@ -494,7 +502,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 return getTypeFromEntry(entry);
             } else {
                 return "unknown";
-                // errorOutput = errorOutput + "[ERROR] Function '" + callExp.func + "' is undefined" + " at line " + (node.row + 1) + " and column " + (node.col + 1));
+                // errorOutput = errorOutput + "\n[ERROR] Function '" + callExp.func + "' is undefined" + " at line " + (node.row + 1) + " and column " + (node.col + 1));
             }
         }
         if (expr instanceof OpExp) {
@@ -503,7 +511,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             String rightType = getExpressionType(opExp.right);
     
             if (!leftType.equals(rightType)) {
-                // errorOutput = errorOutput + "[ERROR] Type mismatch in operation: Cannot apply operator to '" + leftType + "' and '" + rightType + " at line " + (node.row + 1) + " and column " + (node.col + 1));
+                // errorOutput = errorOutput + "\n[ERROR] Type mismatch in operation: Cannot apply operator to '" + leftType + "' and '" + rightType + " at line " + (node.row + 1) + " and column " + (node.col + 1));
                 return "unknown";
             }
     

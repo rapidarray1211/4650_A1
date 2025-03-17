@@ -1,14 +1,5 @@
 int global;
 bool foo(void) {
-    bool x;
-    return x;
-}
-
-void main(void) {
     int x;
-    x = 10;
-    {
-        int test;
-    }
-    if (x < 15) x = 5;
+    return x;
 }
