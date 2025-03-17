@@ -12,6 +12,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     private String errorOutput = "";
 	private AnalyzerPrinter printer;
     private boolean hasReturn = false;
+    private boolean mainDeclared = false;
 
     public SemanticAnalyzer(AnalyzerPrinter printer) {
         symbolTable = new SymbolTable();
@@ -30,6 +31,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
         symbolTable.printTable();
         System.out.println();
         System.out.println("[END] Semantic Analysis Complete.");
+        if (!mainDeclared) {
+            errorFlag = true;
+            errorOutput = errorOutput + "\n[ERROR] Missing main";
+        }
         if (!errorFlag) {
             System.out.println("No semantic errors");
         }
@@ -68,6 +73,15 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 break;
             default:
                 currentFunctionReturnType = "null";
+        }
+
+        if (mainDeclared) {
+            errorFlag = true;
+            errorOutput = errorOutput + "\n[ERROR] Function '" + node.func_name + "' is declared after main when main must be the last function " + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+        }
+
+        if (node.func_name.equals("main")) {
+            mainDeclared = true;
         }
 
         VarDecList params = node.parameters;

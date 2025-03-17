@@ -2,4 +2,5 @@ int global;
 bool foo(void) {
     int x;
     bool p;
+    return int;
 }
