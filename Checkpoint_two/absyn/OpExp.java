@@ -1,21 +1,21 @@
 package absyn;
 
 public class OpExp extends Exp {
-  public static final int PLUS   = 0;
-  public static final int MINUS  = 1;
-  public static final int TIMES  = 2;
-  public static final int OVER   = 3;
-  public static final int EQ     = 4;
-  public static final int LT     = 5;
-  public static final int GT     = 6;
-  public static final int UMINUS = 7;
-  public static final int LTE    = 8;
-  public static final int GTE    = 9;
-  public static final int NEQ    = 10;
-  public static final int OR     = 11;
-  public static final int AND    = 12;
-  public static final int NOT    = 13;
-  public static final int DIVIDE = 14;
+  public final static int PLUS   = 0;
+  public final static int MINUS  = 1;
+  public final static int TIMES  = 2;
+  public final static int OVER   = 3;
+  public final static int EQ     = 4;
+  public final static int LT     = 5;
+  public final static int GT     = 6;
+  public final static int UMINUS = 7;
+  public final static int LTE    = 8;
+  public final static int GTE    = 9;
+  public final static int NEQ    = 10;
+  public final static int OR     = 11;
+  public final static int AND    = 12;
+  public final static int NOT    = 13;
+  public final static int DIVIDE = 14;
 
   public Exp left;
   public int op;

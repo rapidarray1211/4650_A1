@@ -2,8 +2,6 @@ package absyn;
 
 public interface AbsynVisitor {
 
-  public int getSymbolCount();
-
   public void visit( ExpList exp, int level );
 
   public void visit( AssignExp exp, int level );

@@ -1,6 +1,4 @@
 package absyn;
 
-public abstract class Var extends Absyn {
-    
-    public abstract String getName();
+abstract public class Var extends Absyn {
 }
