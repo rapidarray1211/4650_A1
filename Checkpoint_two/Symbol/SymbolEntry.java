@@ -16,6 +16,20 @@ public class SymbolEntry {
 
     @Override
     public String toString() {
-        return "Entry{type=" + type + ", scope=" + scope + ", dim=" + dim + ", offset=" + offset + ", pc=" + pc + "}";
+        return "Entry{type=" + getTypeAsString(this.type) + 
+               ", scope=" + this.scope + 
+               ", dim=" + this.dim + 
+               ", offset=" + this.offset + 
+               ", pc=" + this.pc + "}";
     }
+    
+    private String getTypeAsString(int type) {
+        switch (type) {
+            case 0: return "bool";
+            case 1: return "int";
+            case 2: return "void";
+            default: return "unknown";
+        }
+    }
+    
 }

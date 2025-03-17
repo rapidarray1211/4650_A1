@@ -10,17 +10,27 @@ public class SymbolTable {
 
     public SymbolTable() {
         this.table = new HashMap<>();
-        this.currentScope = 0;
-        // System.out.println("[INIT] Symbol Table Created. Global Scope: " + currentScope);
+        this.currentScope = -1;
+
     }
 
     public void enterScope() {
         currentScope++;
-        // System.out.println("\n[ENTER] Entering Scope Level: " + currentScope);
+        for (int i=0; i < currentScope; i++) {
+            for (int j=0; j<4; j++) {
+                System.out.print(" ");
+            }
+        }
+        System.out.println("[ENTER] Entering Scope Level: " + currentScope);
     }
 
     public void exitScope() {
-        // System.out.println("\n[EXIT] Exiting Scope Level: " + currentScope);
+        for (int i=0; i < currentScope; i++) {
+            for (int j=0; j<4; j++) {
+                System.out.print(" ");
+            }
+        }
+        System.out.println("[EXIT] Exiting Scope Level: " + currentScope);
         printTable();
         Iterator<Map.Entry<String, SymbolEntry>> iterator = table.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -41,7 +51,7 @@ public class SymbolTable {
             return false;
         }
         table.put(name, new SymbolEntry(type, currentScope, dim, offset, pc));
-        System.out.println("[SUCCESS] Inserted '" + name + "' (Type: " + type + ", Dim: " + dim + ", Offset: " + offset + ", PC: " + pc + ") in Scope: " + currentScope);
+        //System.out.println("[SUCCESS] Inserted '" + name + "' (Type: " + type + ", Dim: " + dim + ", Offset: " + offset + ", PC: " + pc + ") in Scope: " + currentScope);
         return true;
     }
 
@@ -56,11 +66,29 @@ public class SymbolTable {
     }
 
     public void printTable() {
-        System.out.println("\n[PRINT] Symbol Table Dump (Current Scope: " + currentScope + ")");
+        if (currentScope == -1) {
+            return;
+        }
+        for (int i=0; i < currentScope; i++) {
+            for (int j=0; j<4; j++) {
+                System.out.print(" ");
+            }
+        }
+        System.out.println("[PRINT] Symbol Table Dump (Current Scope: " + currentScope + ")");
         if (table.isEmpty()) {
+            for (int i=0; i < currentScope; i++) {
+                for (int j=0; j<4; j++) {
+                    System.out.print(" ");
+                }
+            }
             System.out.println("[EMPTY] Symbol Table is empty.");
         } else {
             for (Map.Entry<String, SymbolEntry> entry : table.entrySet()) {
+                for (int i=0; i < currentScope; i++) {
+                    for (int j=0; j<4; j++) {
+                        System.out.print(" ");
+                    }
+                }
                 System.out.println(entry.getKey() + " -> " + entry.getValue());
             }
         }
