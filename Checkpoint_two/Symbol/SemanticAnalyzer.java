@@ -460,7 +460,6 @@ public class SemanticAnalyzer implements AbsynVisitor {
     }
 
     public void visit(IndexVar node, int level) {
-        System.out.println("TESTING HERE HEREH ERHE ERHE HRHE ");
         SymbolEntry entry = symbolTable.lookup(node.name);
         if (entry == null) {
             errorOutput = errorOutput + "Error: Undeclared array variable '" + node.name + " at line " + (node.row + 1) + " and column " + (node.col + 1);
@@ -469,7 +468,6 @@ public class SemanticAnalyzer implements AbsynVisitor {
             errorOutput = errorOutput + "Error: '" + node.name + "' is not an array" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
-        System.out.println("\n\nTESTING TESTING");
         if (getExpressionType(node.index).equals("int")) {
             //system.out.println("[INFO] Valid integer index for array '" + node.name + "'.");
 			//printer.printLevel("[INFO] Valid integer index for array '" + node.name + "'.", level);
