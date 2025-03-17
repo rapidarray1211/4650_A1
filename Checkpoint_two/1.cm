@@ -1,8 +1,5 @@
 void foo(void) {
     bool x;
-    int y[3];
-    y[z] = 15;
-    x = y;
     return x;
 }
 
@@ -10,5 +7,4 @@ void main(void) {
     int x;
     x = 10;
     if (x < 15) x = 5;
-    x = foo();
 }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 public class SemanticAnalyzer implements AbsynVisitor {
     private SymbolTable symbolTable;
+    private String currentFunctionReturnType = null;
 
     public SemanticAnalyzer() {
         symbolTable = new SymbolTable();
@@ -36,6 +37,17 @@ public class SemanticAnalyzer implements AbsynVisitor {
     public void visit(FunctionDec node, int level) {
         System.out.println("[VISIT] FunctionDec '" + node.func_name + "' at level " + level);
         List<String> paramTypes = new ArrayList<>();
+        switch (node.return_type.type) {
+            case 0:
+                currentFunctionReturnType = "bool";
+            case 1:
+                currentFunctionReturnType = "int";
+            case 2:
+                currentFunctionReturnType = "void";
+            case 3:
+                currentFunctionReturnType = "null";
+        }
+
         VarDecList params = node.parameters;
         while (params != null && params.head != null) {
             paramTypes.add(getType(params.head));
@@ -75,6 +87,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             node.body.accept(this, level + 1);
             symbolTable.exitScope();
             System.out.println("[EXIT] Scope for function '" + node.func_name + "'");
+            currentFunctionReturnType = null;
         }
     }
 
@@ -223,10 +236,27 @@ public class SemanticAnalyzer implements AbsynVisitor {
     @Override
     public void visit(ReturnExp node, int level) {
         System.out.println("[VISIT] ReturnExp");
-        if (node.exp != null) {
-            node.exp.accept(this, level);
+    
+        if (currentFunctionReturnType == null) {
+            System.err.println("[ERROR] Return statement found outside of a function" + " at line " + (node.row + 1) + " and column " + (node.col + 1));
+            return;
+        }
+    
+        if (node.exp == null) {
+            if (!currentFunctionReturnType.equals("void")) {
+                System.err.println("[ERROR] Missing return value in non-void function" + " at line " + (node.row + 1) + " and column " + (node.col + 1));
+            }
+            return;
+        }
+    
+        node.exp.accept(this, level);
+        String returnType = getExpressionType(node.exp);
+    
+        if (!returnType.equals(currentFunctionReturnType)) {
+            System.err.println("[ERROR] Function must return '" + currentFunctionReturnType + "', but got '" + returnType + " at line " + (node.row + 1) + " and column " + (node.col + 1));
         }
     }
+    
     
     @Override
     public void visit(VarExp node, int level) {
