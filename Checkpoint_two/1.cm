@@ -1,11 +1,5 @@
-int fun(int arr[], int size) {
-    int i;
-    int sum;
-    sum = 0;
-    i = 0;
-    while (i < size) {
-        sum = sum + arr;
-        i = i + 1;
-    }
-    return sum;
+void main(void) {
+int a[2]; int x;
+a[x] = 1;
+a[a] = 2; 
 }

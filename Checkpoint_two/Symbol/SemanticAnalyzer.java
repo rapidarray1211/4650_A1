@@ -233,6 +233,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 varName = ((SimpleVar) varExp.variable).name;
             } else if (varExp.variable instanceof IndexVar) {
                 varName = ((IndexVar) varExp.variable).name;
+                visit((IndexVar) varExp.variable, level);
                 String indexType = getExpressionType(((IndexVar) varExp.variable).index);
                 if (!indexType.equals("int")) {
                     errorOutput = errorOutput + "\n[ERROR] Array index must be of type int but is instead type " + indexType + " at line " + (node.row + 1) + " and column " + (node.col + 1);
@@ -589,25 +590,48 @@ public class SemanticAnalyzer implements AbsynVisitor {
             errorFlag = true;
         }
     }
-
+    @Override
     public void visit(IndexVar node, int level) {
         SymbolEntry entry = symbolTable.lookup(node.name);
+    
         if (entry == null) {
-            errorOutput = errorOutput + "Error: Undeclared array variable '" + node.name + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorOutput = errorOutput + "\n[ERROR] Undeclared array variable '" + node.name + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
-        } else if (entry.dim <=  0) {
-            errorOutput = errorOutput + "Error: '" + node.name + "' is not an array" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+            return;
+        } else if (entry.dim <= 0) {
+            errorOutput = errorOutput + "\n[ERROR] '" + node.name + "' is not an array at line " + (node.row + 1) + " and column " + (node.col + 1);
+            errorFlag = true;
+            return;
+        }
+    
+        String indexType = getExpressionType(node.index);
+        int indexDim = 0;
+
+        if (node.index instanceof VarExp) {
+            VarExp varExp = (VarExp) node.index;
+            if (varExp.variable instanceof SimpleVar) {
+                SymbolEntry indexEntry = symbolTable.lookup(((SimpleVar) varExp.variable).name);
+                if (indexEntry != null) {
+                    indexDim = indexEntry.dim;
+                }
+            } else if (varExp.variable instanceof IndexVar) {
+                indexDim = 0;
+            }
+        }
+    
+        if (!indexType.equals("int")) {
+            errorOutput = errorOutput + "\n[ERROR] Array index for '" + node.name + "' must be an integer at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
-        if (getExpressionType(node.index).equals("int")) {
-            //system.out.println("[INFO] Valid integer index for array '" + node.name + "'.");
-			//printer.printLevel("[INFO] Valid integer index for array '" + node.name + "'.", level);
-        } else {
-            errorOutput = errorOutput + "\n[ERROR] Array index for '" + node.name + "' must be an integer" + " at line " + (node.row + 1) + " and column " + (node.col + 1);
+    
+        if (indexDim > 0) {
+            errorOutput = errorOutput + "\n[ERROR] Array index for '" + node.name + "' cannot be an array at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
+    
         node.index.accept(this, level);
     }
+    
 
     private boolean isTypeCompatible(Exp left, Exp right) {
         String leftType = getExpressionType(left);
