@@ -25,7 +25,7 @@ public class AnalyzerPrinter {
 
     }
 
-    private void indent(int level){
+    public void indent(int level){
 
         if (toFile){
             
@@ -68,6 +68,23 @@ public class AnalyzerPrinter {
             try {
                 writer.write(msg);
                 writer.newLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else{
+            System.out.println(msg);
+        }
+
+    }
+
+    //print a single message at a level with no new line
+    public void printLevelNoLn(String msg, int level){
+
+        indent(level);
+        if (toFile){
+            try {
+                writer.write(msg);
             } catch (IOException e) {
                 e.printStackTrace();
             }
