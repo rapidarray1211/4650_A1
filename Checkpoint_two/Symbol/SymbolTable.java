@@ -82,8 +82,10 @@ public class SymbolTable {
             printer.printMsg("[EMPTY] Symbol Table is empty.");
         } else {
             for (Map.Entry<String, SymbolEntry> entry : table.entrySet()) {
-                printer.indent(currentScope);
-                printer.printMsg(entry.getKey() + " -> " + entry.getValue());
+                if (entry.getValue().scope == currentScope){
+                    printer.indent(currentScope);
+                    printer.printMsg(entry.getKey() + " -> " + entry.getValue());
+                }
             }
         }
     }
