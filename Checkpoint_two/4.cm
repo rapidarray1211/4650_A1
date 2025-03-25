@@ -8,9 +8,10 @@ y = x + 7;
 return x;
 }
 
-void funtwo(void) {
+bool funtwo(void) {
 int x;
-x = fun();
+bool y;
+y = fun(x);
 return x;
 }
 
