@@ -1,0 +1,22 @@
+/*Error 1: incorrect number of arguments for fun in line 13
+  Error 2: passing array to an index in line 20*/
+
+int fun(int fff ) {
+int x; int y;
+x = x * 2 + 1;
+y = x + 7;
+return x;
+}
+
+bool funtwo(void) {
+int x;
+bool y;
+y = fun(x);
+return x;
+}
+
+void main(void) {
+int a[2]; int x;
+a[x] = 1;
+a[a] = 2; 
+}

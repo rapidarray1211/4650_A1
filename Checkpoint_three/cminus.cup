@@ -1,0 +1,589 @@
+/* C- Parser Specification */
+
+import java_cup.runtime.*;
+import absyn.*;
+parser code {:
+    
+    /* Change the method report_error so it will display the line and
+       column of where the error occurred in the input as well as the
+       reason for the error which is passed into the method in the
+       String 'message'. */
+    public void report_error(String message, Object info) {
+        if (message.contains("Syntax error")) return;
+        /* Create a StringBuffer called 'm' with the string 'Error' in it. */
+        StringBuffer m = new StringBuffer("Error");
+   
+        /* Check if the information passed to the method is the same
+           type as the type java_cup.runtime.Symbol. */
+        if (info instanceof java_cup.runtime.Symbol) {
+            /* Declare a java_cup.runtime.Symbol object 's' with the
+               information in the object info that is being typecasted
+               as a java_cup.runtime.Symbol object. */
+            java_cup.runtime.Symbol s = ((java_cup.runtime.Symbol) info);
+   
+            /* Check if the line number in the input is greater or
+               equal to zero. */
+            if (s.left >= 0) {                
+                /* Add to the end of the StringBuffer error message
+                   the line number of the error in the input. */
+                m.append(" in line "+(s.left+1));   
+                /* Check if the column number in the input is greater
+                   or equal to zero. */
+                if (s.right >= 0)                    
+                    /* Add to the end of the StringBuffer error message
+                       the column number of the error in the input. */
+                    m.append(", column "+(s.right+1));
+            }
+        }
+   
+        /* Add to the end of the StringBuffer error message created in
+           this method the message that was passed into this method. */
+        m.append(" : "+message);
+   
+        /* Print the contents of the StringBuffer 'm', which contains
+           an error message, out on a line. */
+        System.err.println(m);
+
+        valid = false;
+    }
+    @Override
+   public void syntax_error(Symbol cur_token) {
+      // Suppress default expected token messages
+      valid = false;
+      return;
+   }
+   
+    /* Change the method report_fatal_error so when it reports a fatal
+       error it will display the line and column number of where the
+       fatal error occurred in the input as well as the reason for the
+       fatal error which is passed into the method in the object
+       'message' and then exit.*/
+    public void report_fatal_error(String message, Object info) {
+        report_error(message, info);
+        valid = false;
+        System.exit(1);
+    }
+
+    /* Assume true at the start, but set to false with parsing errors */
+    public static boolean valid = true;
+
+:};
+
+// Define the grammar for C-
+
+/* Precedence and associativity rules */
+
+/* Define terminal tokens */
+terminal BOOL, IF, ELSE, INT, RETURN, VOID, WHILE;
+terminal PLUS, MINUS, TIMES, DIVIDE, LT, GT, LTE, GTE, EQ, NEQ, TILDE, OR, AND, ASSIGN, SCOLON, COMMA;
+terminal LPAREN, RPAREN, LSQUARE, RSQUARE, LCURLY, RCURLY;
+terminal TRUTH, ID, NUM;
+terminal ERR;
+
+/* Define nonterminal tokens */
+non terminal program, declaration_list, declaration, var_declaration, fun_declaration, type_specifier, fun_prototype;
+non terminal params, param_list, param, compound_stmt, local_declarations, statement_list, statement;
+non terminal expression_stmt, selection_stmt, iteration_stmt, return_stmt, expression, var, simple_expression;
+non terminal obool_expression, abool_expression, ubool_expression;
+non terminal relop, additive_expression, addop, term, mulop, signed_factor, factor, call, args, arg_list;
+
+/* Precedences */
+precedence left OR;
+precedence left AND;
+precedence left EQ, NEQ;
+precedence left LT, LTE, GT, GTE;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIVIDE;
+// precedence right UMINUS;
+// precedence nonassoc LOWER_THAN_ELSE;
+precedence nonassoc ELSE;
+
+/* Start symbol */
+start with program;
+
+
+/* Grammar rules */
+
+program ::= declaration_list:d
+          {:
+            RESULT = d;
+            // System.out.println("DEBUG [program]: Entered PROGRAM"); 
+          :};
+
+declaration_list ::= declaration_list:d1 declaration:d
+                   {: 
+                     DecList dl = (DecList) d1;
+                     while ( dl.tail != null )
+                        dl = dl.tail;
+                     dl.tail = new DecList((Dec) d, null);
+                     RESULT = d1;
+                     //  System.out.println("DEBUG [declaration_list]: Adding declaration: " + 
+                     //    ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+                   :} 
+                   | declaration:d
+                   {: 
+                      RESULT = new DecList((Dec)d, null);
+                     //  System.out.println("DEBUG [declaration_list]: Single declaration processed: " + 
+                     //    ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+                   :};
+
+declaration ::= var_declaration:vd
+              {: 
+                  RESULT = vd;
+                  // System.out.println("DEBUG [declaration]: Parsed var_declaration: " + 
+                  //  ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+              :} 
+              | fun_declaration:fd
+              {: 
+                  RESULT = fd;
+                  // System.out.println("DEBUG [declaration]: Parsed fun_declaration: " + 
+                  //  ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+              :}
+              | fun_prototype:fp
+              {:
+                  RESULT = fp;
+                  // System.out.println("DEBUG [declaration]: Parsed fun_prototype: " + 
+                  //  ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+              :};
+
+var_declaration ::= type_specifier:t ID:i SCOLON 
+                  {: 
+                     RESULT = new SimpleDec(tleft,tright,(NameTy) t, (String) i);
+                     // System.out.println("DEBUG [var_declaration]: Variable declaration: " + 
+                     //   ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value); 
+                  :} 
+                  | type_specifier:t ID:i LSQUARE NUM:n RSQUARE SCOLON 
+                  {: 
+                     RESULT = new ArrayDec(tleft, tright, (NameTy) t, (String) i, Integer.parseInt((String) n));
+                     // System.out.println("DEBUG [var_declaration]: Array declaration: " + 
+                     // ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value + 
+                     // "[" + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value + "]"); 
+                  :}
+                  | type_specifier:t ID:i RSQUARE error:e SCOLON
+                  {:
+                     parser.report_error("Invalid array at line " + (eleft + 1) + " and column " + (eright+1) + ". Need left bracket", e);
+                     RESULT = new SimpleDec(tleft, tright, (NameTy) t, (String) i);
+                  :}
+                  | type_specifier:t ID:i LSQUARE NUM:n SCOLON error:e
+                  {:
+                     parser.report_error("Invalid array at line " + (eleft + 1) + " and column " + (eright+1) + ". Need right bracket", e);
+                     RESULT = new ArrayDec(tleft, tright, (NameTy) t, (String) i, Integer.parseInt((String) n));
+                  :}
+                  | type_specifier:t ID:i LSQUARE RSQUARE error:e SCOLON
+                  {:
+                     parser.report_error("Missing array size at line " + (eleft + 1) + " and column " + (eright+1) + ".", e);
+                     RESULT = new SimpleDec(tleft, tright, (NameTy) t, (String) i);
+                  :}
+                  | type_specifier:t ID:i error:e SCOLON
+                  {: 
+                     parser.report_error("Invalid variable declaration/initialization  at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                     RESULT = new SimpleDec(eleft, eright, (NameTy) t, (String) i);
+                  :}
+                  | type_specifier:t error:e SCOLON
+                  {:
+                     parser.report_error("Missing variable name " + (eleft + 1) + " and column " + (eright + 1), e); 
+                     RESULT = new SimpleDec(eleft, eright, (NameTy) t, null);
+                  :}
+                  |  error:e ID:i SCOLON
+                  {:
+                     parser.report_error("Missing type at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                     RESULT = new SimpleDec(eleft, eright, new NameTy(eleft, eright, 3), (String) i);
+                  :}
+                  | error:e SCOLON
+                  {:
+                     parser.report_error("Invalid variable declaration/initialization at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                     RESULT = new SimpleDec(eleft, eright, new NameTy(eleft, eright, 3), null);
+                  :};
+
+
+fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:cs 
+                  {: 
+                     RESULT = new FunctionDec(tleft,tright,(NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
+                     // System.out.println("DEBUG [fun_declaration]: Function declared: " + 
+                     //   ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-4)).value); 
+                  :}
+                  | type_specifier:t ID:i error:e params:p RPAREN compound_stmt:cs
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing left paranthesis at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :}
+                  | type_specifier:t ID:i LPAREN params:p error:e compound_stmt:cs
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing right paranthesis at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :}
+                  | type_specifier:t error:e LPAREN params:p RPAREN compound_stmt:cs
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, "", (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing function name at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :}
+                  | type_specifier:t ID:i LPAREN RPAREN error:e compound_stmt:cs
+                  {:
+                     parser.report_error("Missing `void` in function declaration at line " + (ileft + 1) + " and column " + (iright + 1), e);
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, new VarDecList(null, null), (Exp) cs);
+                  :};
+
+fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN:r SCOLON
+                  {:
+                     RESULT = new FunctionDec(tleft,tright, (NameTy) t,(String) i, (VarDecList) p, new NilExp(rleft,rright));
+                     // System.out.println("DEBUG [fun_prototype]: Function prototype: ");
+                  :}
+                  | type_specifier:t ID:i error:e params:p RPAREN compound_stmt:cs SCOLON
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing left paranthesis at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :}
+                  | type_specifier:t ID:i LPAREN params:p error:e compound_stmt:cs SCOLON
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, (String) i, (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing right paranthesis at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :}
+                  | type_specifier:t error:e LPAREN params:p RPAREN compound_stmt:cs SCOLON
+                  {:
+                     RESULT = new FunctionDec(tleft, tright, (NameTy) t, "", (VarDecList) p, (Exp) cs);
+                     parser.report_error("Missing function name at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+                  :};
+
+type_specifier ::= BOOL:b
+                 {: 
+                     RESULT = new NameTy(bleft, bright, NameTy.BOOL);
+                     // System.out.println("DEBUG [type_specifier]: Type BOOL"); 
+                  :} 
+                 | INT:i
+                 {:
+                     RESULT = new NameTy(ileft, iright, NameTy.INT);
+                     // System.out.println("DEBUG [type_specifier]: Type INT"); 
+                  :} 
+                 | VOID:v 
+                 {:  RESULT = new NameTy(vleft, vright, NameTy.VOID);
+                     // System.out.println("DEBUG [type_specifier]: Type VOID"); 
+                  :};
+
+// Implement Param list as a linked list
+params ::= param_list:pl 
+         {: RESULT = pl;
+         //    System.out.println("DEBUG [params]: Parsed parameters: " + 
+         //   ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+         :} 
+         | VOID 
+         {: RESULT = new VarDecList(null,null);
+            // System.out.println("DEBUG [params]: Void parameter list"); 
+         :}
+         | error: e 
+         {:
+            RESULT = new VarDecList(null, null);
+            parser.report_error("Syntax error at line " + (eleft + 1) + " and column " + (eright + 1) + " . Missing void parameter.", e); 
+         :};
+
+param_list ::= param_list:pl COMMA param:p
+             {: /* Add to p to tail of pl*/
+               VarDecList t = (VarDecList) pl;
+               while( t.tail != null )
+                  t = t.tail;
+               t.tail = new VarDecList((VarDec)p,null);
+               RESULT = pl;
+               // System.out.println("DEBUG [param_list]: Multiple parameters: " + 
+               // ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+            :} 
+             | param:p 
+             {: RESULT = new VarDecList((VarDec)p,null); /*Create new ParamList with p as head*/
+               // System.out.println("DEBUG [param_list]: Single parameter: " + 
+               // ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+            :};
+
+param ::= type_specifier:t ID:i
+        {: RESULT = new SimpleDec(tleft,tright,(NameTy) t,(String) i);
+         //   System.out.println("DEBUG [param]: Parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.peek()).value); 
+        :} 
+        | type_specifier:t ID:i LSQUARE RSQUARE 
+        {: RESULT = new ArrayDec(tleft,tright,(NameTy) t,(String) i,0);
+         //   System.out.println("DEBUG [param]: Array parameter: " + ((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-2)).value); 
+        :}
+        | type_specifier:t ID:i LSQUARE NUM:n error:e RSQUARE
+        {:
+            parser.report_error("Cannot declare size of array in function parameter list at line " + (eleft + 1) + " and column " + (eright + 1), e); 
+            RESULT = new ArrayDec(tleft, tright, (NameTy) t, (String) i, 0);
+        :};
+
+compound_stmt ::= LCURLY local_declarations:ld statement_list:sl RCURLY 
+                {:RESULT = new CompoundExp(ldleft,ldright,(VarDecList) ld,(ExpList) sl);
+                  // System.out.println("DEBUG [compound_stmt]: Entered compound statement"); 
+               :};
+
+               
+
+/*LocDecl is also a list*/
+local_declarations ::= local_declarations:ld var_declaration:vd
+                     {: /*Add vd to tail of ld*/
+                        VarDecList t = (VarDecList) ld;
+                        while( t.tail != null )
+                           t = t.tail;
+                           t.tail = new VarDecList((VarDec)vd,null);
+                        RESULT = ld; 
+                        // System.out.println("DEBUG [local_declarations]: Local variable declaration"); 
+                     :} 
+                     | 
+                     {: RESULT = new VarDecList(null,null); /*Empty list*/
+                        // System.out.println("DEBUG [local_declarations]: No local declarations"); 
+                     :};
+
+statement_list ::= statement_list:sl statement:s
+                 {: /*Add vstatement to tail of sl*/
+                     ExpList t = (ExpList) sl;
+                     while( t.tail != null )
+                        t = t.tail;
+                        t.tail = new ExpList((Exp)s,null);
+                     RESULT = sl; 
+                     // System.out.println("DEBUG[statement_list]: Added statement"); 
+                  :} 
+                 |{: RESULT = new ExpList(null,null); /*Empty list*/
+                     // System.out.println("DEBUG[statement_list]: No statements in list"); 
+                  :};
+
+statement ::= expression_stmt:es 
+            {: RESULT = es;
+              // System.out.println("DEBUG[statement]: Parsed expression statement"); 
+            :} 
+            | compound_stmt:cs
+            {: RESULT = cs;
+              // System.out.println("DEBUG[statement]: Parsed compound statement"); 
+            :} 
+            | selection_stmt:ss 
+            {: RESULT = ss;
+              // System.out.println("DEBUG[statement]: Parsed selection statement"); 
+            :} 
+            | iteration_stmt:is 
+            {: RESULT = is;
+              // System.out.println("DEBUG[statement]: Parsed iteration statement"); 
+            :} 
+            | return_stmt:rs
+            {: RESULT = rs;
+              // System.out.println("DEBUG[statement]: Parsed return statement"); 
+            :};
+
+expression_stmt ::= expression:e SCOLON 
+                  {: RESULT = e;
+                   //  System.out.println("DEBUG[expression_stmt]: Parsed an expression statement"); 
+                  :} 
+                  | SCOLON:s 
+                  {: RESULT = new NilExp(sleft,sright);
+                  //System.out.println("DEBUG[expression_stmt]: Empty expression statement"); 
+                  :};
+
+selection_stmt ::= IF:i LPAREN expression:e RPAREN statement:s 
+                 {: RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s, null), null);
+                  //System.out.println("DEBUG: Parsed IF statement"); 
+                  :} 
+                 | IF:i LPAREN expression:e RPAREN statement:s1 ELSE statement:s2
+                 {: RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), new ExpList((Exp) s2, null));
+                  //System.out.println("DEBUG: Parsed IF-ELSE statement"); 
+                  :}
+                  | IF:i error:er expression:e RPAREN statement:s1
+                 {:
+                   RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), null);
+                   parser.report_error("Missing left parenthesis in if statmement at line " + (erleft + 1) + " at column " + (erright + 1), er);
+                 :}
+                 | IF:i LPAREN expression:e error:er statement:s1
+                 {:
+                   RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), null);
+                   parser.report_error("Missing right parenthesis in if statmement at line " + (erleft + 1) + " at column " + (erright + 1), er);
+                 :}
+                 | IF:i error:er expression:e RPAREN statement:s1 ELSE statement:s2
+                 {:
+                   RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), new ExpList((Exp) s2, null));
+                   parser.report_error("Missing left parenthesis in if statmement at line " + (erleft + 1) + " at column " + (erright + 1), er);
+                 :}
+                 | IF:i LPAREN expression:e error:er statement:s1 ELSE statement:s2
+                 {:
+                   RESULT = new IfExp(ileft, iright, (Exp) e, new ExpList((Exp) s1, null), new ExpList((Exp) s2, null));
+                   parser.report_error("Missing right parenthesis in if statmement at line " + (erleft + 1) + " at column " + (erright + 1), er);
+                 :};
+
+
+iteration_stmt ::= WHILE:w LPAREN expression:e RPAREN statement:s 
+                 {: RESULT = new WhileExp(wleft, wright, (Exp) e, (Exp) s);
+                  //System.out.println("DEBUG [iteration_stmt]: Parsed WHILE loop"); 
+                  :};
+
+return_stmt ::= RETURN:r SCOLON 
+              {: RESULT = new ReturnExp(rleft,rright,new NilExp(rleft,rright));
+               //System.out.println("DEBUG [return_stmt]: Parsed RETURN statement without expression"); 
+               :} 
+              | RETURN:r expression:e SCOLON 
+              {: RESULT = new ReturnExp(rleft, rright, (Exp) e);
+               //System.out.println("DEBUG [return_stmt]: Parsed RETURN statement with expression: " + 
+                //((java_cup.runtime.Symbol)CUP$parser$stack.elementAt(CUP$parser$top-1)).value); 
+               :};
+
+expression ::= var:v ASSIGN expression:e
+             {: RESULT = new AssignExp(vleft, vright, new VarExp(vleft, vright, (Var) v), (Exp) e);
+               //System.out.println("DEBUG [expressions]: Assignment statement"); 
+            :} 
+             | obool_expression:ob 
+             {: RESULT = ob;
+              // System.out.println("DEBUG [expression]: Simple expression");
+            :};
+
+var ::= ID:i 
+      {: RESULT = new SimpleVar(ileft, iright, (String) i);
+        // System.out.println("DEBUG [var]: Variable ");
+        :} 
+      | ID:i LSQUARE expression:e RSQUARE 
+      {: RESULT = new IndexVar(ileft, iright, (String) i, (Exp) e);
+         //System.out.println("DEBUG [var]: Array access " ); 
+      :};
+
+obool_expression ::= obool_expression:o OR abool_expression:a
+                     {: RESULT = new OpExp(oleft,oright,(Exp)o,OpExp.OR,(Exp)a);
+                       // System.out.println("DEBUG [expressions]: OR statement"); 
+                     :}
+                     | abool_expression:a
+                     {: RESULT = a;
+                       // System.out.println("DEBUG [expressions]: abool in OR statement"); 
+                     :};
+               
+abool_expression ::= abool_expression:a AND ubool_expression:u
+                     {: RESULT = new OpExp(aleft,aright,(Exp)a,OpExp.AND,(Exp)u);
+                       // System.out.println("DEBUG [expressions]: AND statement"); 
+                     :}
+                     | ubool_expression:u
+                     {: RESULT = u;
+                        //System.out.println("DEBUG [expressions]: ubool in AND statement"); 
+                     :};
+
+ubool_expression ::= TILDE ubool_expression:b
+                     {: RESULT = new OpExp(bleft,bright,new NilExp(bleft,bright),OpExp.NOT,(Exp)b);
+                        //System.out.println("DEBUG [expressions]: NOT statement"); 
+                     :}
+                     | simple_expression:s
+                     {: RESULT = s;
+                        //System.out.println("DEBUG [expressions]: simple expression in NOT statement"); 
+                     :};
+
+simple_expression ::= additive_expression:a1 relop:r additive_expression:a2 
+                     {: RESULT = new OpExp(a1left,a1right,(Exp)a1, (int)r, (Exp)a2);
+                       // System.out.println("DEBUG [simple_expression]: Relational expression"); 
+                     :} 
+                     | additive_expression:a
+                     {: RESULT = a;
+                        //System.out.println("DEBUG [simple_expression]: Additive expression"); 
+                     :};
+
+relop ::= LT 
+        {: RESULT = OpExp.LT;
+         //System.out.println("DEBUG [relop]: Parsed < operator"); 
+         :} 
+        | LTE 
+        {: RESULT = OpExp.LTE;
+         //System.out.println("DEBUG [relop]: Parsed <= operator"); 
+         :} 
+        | GT 
+        {: RESULT = OpExp.GT;
+         //System.out.println("DEBUG [relop]: Parsed > operator"); 
+         :} 
+        | GTE 
+        {: RESULT = OpExp.GTE;
+         //System.out.println("DEBUG [relop]: Parsed >= operator"); 
+         :} 
+        | EQ 
+        {: RESULT = OpExp.EQ;
+         //System.out.println("DEBUG [relop]: Parsed == operator"); 
+         :} 
+        | NEQ 
+        {: RESULT = OpExp.NEQ;
+         //System.out.println("DEBUG [relop]: Parsed != operator"); 
+         :};
+
+additive_expression ::= additive_expression:e addop:a term:t 
+                       {: RESULT = new OpExp(eleft,eright,(Exp)e, (int)a, (Exp)t);
+                        //System.out.println("DEBUG [additive_expression]: Additive expression"); 
+                        :} 
+                       | term:t 
+                       {: RESULT = t;
+                        //System.out.println("DEBUG [additive_expression]: Term expression"); 
+                        :};
+
+
+addop ::= PLUS 
+        {: RESULT = OpExp.PLUS;
+         //System.out.println("DEBUG [addop]: Parsed PLUS operator"); 
+         :} 
+        | MINUS 
+        {: RESULT = OpExp.MINUS;
+        //System.out.println("DEBUG [addop]: Parsed MINUS operator"); 
+        :};
+
+term ::= term:t mulop:m signed_factor:f 
+       {: RESULT = new OpExp(tleft,tright,(Exp) t, (int)m, (Exp)f);
+         //System.out.println("DEBUG [term]: Parsed term"); 
+      :} 
+       | signed_factor:f
+       {: RESULT = f;
+         //System.out.println("DEBUG [term]: Parsed signed factor"); 
+      :};
+
+mulop ::= TIMES 
+        {: RESULT = OpExp.TIMES;
+         //System.out.println("DEBUG [mulop]: Parsed TIMES operator"); 
+         :} 
+        | DIVIDE 
+        {: RESULT = OpExp.DIVIDE;
+         //System.out.println("DEBUG [mulop]: Parsed DIVIDE operator"); 
+         :};
+
+signed_factor ::= MINUS signed_factor:s
+               {: RESULT = new OpExp(sleft,sright,new NilExp(sleft,sright),OpExp.UMINUS, (Exp)s);
+                  //System.out.println("DEBUG [mulop]: Parsed signed factor"); 
+                  :} 
+               | factor:f 
+                {: RESULT = f;
+                  //System.out.println("DEBUG [signed_factor]: Parsed factor"); 
+                  :};
+
+factor ::= LPAREN expression:e RPAREN 
+         {: RESULT = e;
+            //System.out.println("DEBUG [factor]: Parenthesized expression"); 
+            :} 
+         | var:v
+         {: RESULT = new VarExp(vleft, vright, (Var) v);
+            //System.out.println("DEBUG [factor]: Variable factor"); 
+            :} 
+         | call:c
+         {: RESULT = c;
+            //System.out.println("DEBUG [factor]: Function call factor"); 
+            :} 
+         | NUM:n 
+         {: RESULT = new IntExp(nleft,nright,(String)n);
+            //System.out.println("DEBUG [factor]: Numeric constant "); 
+            :} 
+         | TRUTH:t 
+         {: RESULT = new BoolExp(tleft,tright,(String)t);
+            //System.out.println("DEBUG [factor]: Boolean constant "); 
+            :};
+
+call ::= ID:i LPAREN args:a RPAREN 
+       {: RESULT = new CallExp(ileft, iright, (String) i, (ExpList) a);
+         //System.out.println("DEBUG [call]: Function call: "); 
+         :};
+
+args ::= arg_list:e 
+       {: RESULT = e;
+         //System.out.println("DEBUG [args]: Arguments present"); 
+         :} 
+       | 
+       {: RESULT = new ExpList(null,null);
+         //System.out.println("DEBUG [args]: No arguments"); 
+         :};
+
+arg_list ::= arg_list:a COMMA expression:e 
+           {:  ExpList t = (ExpList)a;
+               while(t.tail != null)
+                  t = t.tail;
+               t.tail = new ExpList((Exp)e, null);
+               RESULT = a;
+           // System.out.println("DEBUG [arg_list]: Multiple function arguments"); 
+           :} 
+           | expression:e 
+           {: RESULT = new ExpList((Exp)e,null);
+            //System.out.println("DEBUG [arg_list]: Single function argument"); 
+            :};
