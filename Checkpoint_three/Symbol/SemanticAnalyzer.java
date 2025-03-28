@@ -20,6 +20,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
 		this.printer = printer;
     }
 	
+    public SymbolTable getSymbolTable() {
+        return symbolTable;
+    }
+    
 	/*public SemanticAnalyzer(AnalyzerPrinter printer) {
         this.printer = printer;
     }*/
@@ -27,7 +31,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
     public void analyze(DecList root) {
         symbolTable.enterScope("Global");
-        visit(root, 0);
+        List<Integer> outputParamTypes = new ArrayList<>();
+        List<Integer> outputParamDims = new ArrayList<>();
+        outputParamTypes.add(1);  // int
+        outputParamDims.add(0);   // scalar
+        symbolTable.insert("output", 2, 1, 0, 0, outputParamTypes, outputParamDims);
+        
+        symbolTable.insert("input", 1, 0, 0, 0);
+        visit(root, 0, false);
         symbolTable.exitScope("Exiting Global");
         symbolTable.printTable();
         System.out.println();
@@ -215,7 +226,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             node.exps.accept(this, level, flag); // Ensure expressions are visited!
         }
         if (!firstCompoundInFunction && enteredScope) {
-            symbolTable.exitScope("Exiting compoudn statement");
+            symbolTable.exitScope("Exiting compound statement");
         }
         //system.out.println("[EXIT] Compound Statement Scope at level " + level);
 		//printer.printLevel("[EXIT] Compound Statement Scope at level " + level, level);
@@ -807,7 +818,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
             return leftType; 
         }
-        return "unknown";
+        return "unknown"; 
     }
     
 }

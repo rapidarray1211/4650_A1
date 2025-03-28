@@ -1,5 +1,3 @@
-package codegen;
-
 import java.io.*;
 
 public class TMWriter {

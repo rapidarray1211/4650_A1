@@ -1,18 +1,4 @@
-int globalvar;
-int test(void)
-{
-    int x;
-    return x;
-}
-
 void main(void) {
-    int arr [5];
-    int x;
-    x = 1;
-    while (x)
-    {
-        int y;
-        y = x;
-    }
-    test();
+  int x;
+  x = 3 + 4;
 }

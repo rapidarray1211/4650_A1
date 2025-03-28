@@ -3,7 +3,6 @@ import absyn.*;
 import Symbol.SemanticAnalyzer;
 import Symbol.SymbolTable;
 import Symbol.AnalyzerPrinter;
-import codegen.CodeGenerator;
 
 class Main {
 	public static final boolean DEBUG = true;
@@ -35,7 +34,7 @@ class Main {
             if (result != null) {
                 if (SHOW_TREE) {
                     AbsynVisitor visitor = new ShowTreeVisitor(aPrinter);
-                    result.accept(visitor, 0);
+                    result.accept(visitor, 0, false);
                     if (aArg) aPrinter.close();
                 }
 
@@ -46,13 +45,13 @@ class Main {
                         analyzer.analyze((DecList) result);
                         sPrinter.printMsg("Semantic Analysis Completed.");
                         if (sArg) sPrinter.close();
+                        if (cArg) {
+                            SymbolTable table = analyzer.getSymbolTable();
+                            CodeGenerator generator = new CodeGenerator(cFilename);
+                            generator.visit(result);
+                        }
                     }
 
-                    if (cArg) {
-                        SymbolTable table = new SymbolTable(null);
-                        CodeGenerator generator = new CodeGenerator(table, cFilename);
-                        generator.generate((DecList) result);
-                    }
                 } else {
                     System.out.println("Errors were found in parsing, semantic analysis not started.");
                 }
