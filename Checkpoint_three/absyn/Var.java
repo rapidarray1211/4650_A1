@@ -1,6 +1,6 @@
 package absyn;
 
-abstract public class Var extends Absyn {
+public abstract class Var extends Absyn {
 
     //link to the vardec
     public VarDec vardec;
