@@ -1,4 +1,9 @@
 void main(void) {
   int x;
-  x = 3 + 4;
+  x = input();
+  if (x > 0) {
+    output(x);
+  } else {
+    output(x);
+  }
 }
