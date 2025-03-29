@@ -7,8 +7,15 @@ public class CodeGenerator implements AbsynVisitor {
     private int labelCounter = 0;
     private int tempOffset = -1;
     private int currentLocalOffset = 0;
+    private int mainEntry = -1;
+    private int globalOffset = -1;
 
-    // Local variable name → stack offset
+    public static final int AC = 0;
+    public static final int AC1 = 1;
+    public static final int FP = 5;
+    public static final int GP = 6;
+    public static final int PC = 7;
+
     private Map<String, Integer> localVarOffsets = new HashMap<>();
 
     public CodeGenerator(String outputFile) {
@@ -28,14 +35,41 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     private void emitPrelude() throws IOException {
-        tm.emitComment("Program start");
-        tm.emitRM("LD", 6, 0, 0, "Load frame pointer");
-        tm.emitRM("LDA", 7, 1, 7, "Jump to main (placeholder)");
+        tm.emitComment("Standard prelude:");
+
+        tm.emitRM("LD", GP, 0, AC, "load gp with maxaddress");
+        tm.emitRM("LDA", FP, 0, GP, "copy gp to fp"); 
+        tm.emitRM("ST", AC, 0, AC, "clear location 0");
+
+        int savedLoc = tm.emitSkip(1);
+        tm.emitComment("Jump around i/o routines here");
+
+        tm.emitComment("code for input routine");
+        tm.emitRM("ST", AC, -1, FP, "store return");  
+        tm.emitRO("IN", AC, 0, 0, "input");
+        tm.emitRM("LD", PC, -1, FP, "return to caller");
+
+        tm.emitComment("code for output routine");
+        tm.emitRM("ST", AC, -1, FP, "store return"); 
+        tm.emitRM("LD", AC, -2, FP, "load output value");
+        tm.emitRO("OUT", AC, 0, 0, "output");
+        tm.emitRM("LD", PC, -1, FP, "return to caller");
+
+        int afterIO = tm.getCurrentLoc();
+        tm.emitBackup(savedLoc);
+        tm.emitRM_Abs("LDA", PC, afterIO, "jump around i/o code");
+        tm.emitRestore();
+
+        tm.emitComment("End of standard prelude.");
     }
 
     private void emitFinale() throws IOException {
-        tm.emitComment("Program end");
-        tm.emitRO("HALT", 0, 0, 0, "End execution");
+        tm.emitRM("ST", FP, 0, FP, "push ofp");
+        tm.emitRM("LDA", FP, 0, FP, "push frame");
+        tm.emitRM("LDA", AC, 1, PC, "load ac with ret ptr");
+        tm.emitRM_Abs("LDA", PC, mainEntry + 1, "jump to main loc");
+        tm.emitRM("LD", FP, 0, FP, "pop frame");
+        tm.emitRO("HALT", 0, 0, 0, "");
     }
 
     private int newLabel() {
@@ -48,7 +82,7 @@ public class CodeGenerator implements AbsynVisitor {
         try {
             int value = Integer.parseInt(node.value);
             tm.emitComment("Integer literal: " + value);
-            tm.emitRM("LDC", 0, value, 0, "Load constant into R0");
+            tm.emitRM("LDC", AC, value, 0, "Load constant into R0");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -58,13 +92,13 @@ public class CodeGenerator implements AbsynVisitor {
     public void visit(AssignExp node, int level, boolean isAddr) {
         System.out.println("[CG] AssignExp");
         try {
-            tm.emitComment("Assignment");
+            tm.emitComment("-> op");
             node.rhs.accept(this, level, false);
             if (node.lhs != null && node.lhs.variable instanceof SimpleVar) {
                 String name = ((SimpleVar) node.lhs.variable).name;
                 Integer offset = localVarOffsets.get(name);
                 if (offset != null) {
-                    tm.emitRM("ST", 0, offset, 6, "Store to variable '" + name + "'");
+                    tm.emitRM("ST", AC, offset, GP, "Store to variable '" + name + "'");
                 } else {
                     tm.emitComment("[ERROR] Undeclared variable: " + name);
                 }
@@ -80,22 +114,22 @@ public class CodeGenerator implements AbsynVisitor {
         try {
             tm.emitComment("Binary Operation");
             node.left.accept(this, level, false);
-            tm.emitRM("ST", 0, tempOffset, 6, "Push left operand to temp stack");
+            tm.emitRM("ST", AC, tempOffset, GP, "Push left operand to temp stack");
             node.right.accept(this, level, false);
-            tm.emitRM("LD", 1, tempOffset, 6, "Load left operand into R1");
+            tm.emitRM("LD", AC1, tempOffset, GP, "Load left operand into R1");
 
             switch (node.op) {
-                case OpExp.PLUS:    tm.emitRO("ADD", 0, 1, 0, "R0 = R1 + R0"); break;
-                case OpExp.MINUS:   tm.emitRO("SUB", 0, 1, 0, "R0 = R1 - R0"); break;
-                case OpExp.TIMES:   tm.emitRO("MUL", 0, 1, 0, "R0 = R1 * R0"); break;
+                case OpExp.PLUS:    tm.emitRO("ADD", AC, AC1, AC, "R0 = R1 + R0"); break;
+                case OpExp.MINUS:   tm.emitRO("SUB", AC, AC1, AC, "R0 = R1 - R0"); break;
+                case OpExp.TIMES:   tm.emitRO("MUL", AC, AC1, AC, "R0 = R1 * R0"); break;
                 case OpExp.OVER:
-                case OpExp.DIVIDE:  tm.emitRO("DIV", 0, 1, 0, "R0 = R1 / R0"); break;
-                case OpExp.EQ:      tm.emitRO("TEQ", 0, 1, 0, "R0 = R1 == R0"); break;
-                case OpExp.NEQ:     tm.emitRO("TNE", 0, 1, 0, "R0 = R1 != R0"); break;
-                case OpExp.LT:      tm.emitRO("TLT", 0, 1, 0, "R0 = R1 < R0"); break;
-                case OpExp.GT:      tm.emitRO("TGT", 0, 1, 0, "R0 = R1 > R0"); break;
-                case OpExp.LTE:     tm.emitRO("TLE", 0, 1, 0, "R0 = R1 <= R0"); break;
-                case OpExp.GTE:     tm.emitRO("TGE", 0, 1, 0, "R0 = R1 >= R0"); break;
+                case OpExp.DIVIDE:  tm.emitRO("DIV", AC, AC1, AC, "R0 = R1 / R0"); break;
+                case OpExp.EQ:      tm.emitRO("TEQ", AC, AC1, AC, "R0 = R1 == R0"); break;
+                case OpExp.NEQ:     tm.emitRO("TNE", AC, AC1, AC, "R0 = R1 != R0"); break;
+                case OpExp.LT:      tm.emitRO("TLT", AC, AC1, AC, "R0 = R1 < R0"); break;
+                case OpExp.GT:      tm.emitRO("TGT", AC, AC1, AC, "R0 = R1 > R0"); break;
+                case OpExp.LTE:     tm.emitRO("TLE", AC, AC1, AC, "R0 = R1 <= R0"); break;
+                case OpExp.GTE:     tm.emitRO("TGE", AC, AC1, AC, "R0 = R1 >= R0"); break;
                 default:
                     tm.emitComment("Unsupported operator: " + node.op);
             }
@@ -104,8 +138,7 @@ public class CodeGenerator implements AbsynVisitor {
         }
     }
 
-    @Override
-    public void visit(DecList node, int level, boolean isAddr) {
+    @Override public void visit(DecList node, int level, boolean isAddr) {
         System.out.println("[CG] DecList");
         while (node != null) {
             if (node.head != null) node.head.accept(this, level, isAddr);
@@ -118,10 +151,11 @@ public class CodeGenerator implements AbsynVisitor {
         System.out.println("[CG] FunctionDec: " + node.func_name);
         try {
             tm.emitComment("Function " + node.func_name);
-            // reset local vars for each function
+            if ("main".equals(node.func_name)) {
+                mainEntry = tm.getCurrentLoc();
+            }
             localVarOffsets.clear();
             currentLocalOffset = -1;
-
             if (node.body instanceof CompoundExp) {
                 node.body.accept(this, level + 1, isAddr);
             } else {
@@ -144,8 +178,7 @@ public class CodeGenerator implements AbsynVisitor {
         }
     }
 
-    @Override
-    public void visit(CompoundExp node, int level, boolean isAddr) {
+    @Override public void visit(CompoundExp node, int level, boolean isAddr) {
         System.out.println("[CG] CompoundExp");
         if (node.decs != null) node.decs.accept(this, level + 1, isAddr);
         if (node.exps != null) node.exps.accept(this, level + 1, isAddr);
@@ -163,9 +196,9 @@ public class CodeGenerator implements AbsynVisitor {
                     return;
                 }
                 if (isAddr) {
-                    tm.emitRM("LDA", 0, offset, 6, "Get address of variable '" + name + "'");
+                    tm.emitRM("LDA", AC, offset, GP, "Get address of variable '" + name + "'");
                 } else {
-                    tm.emitRM("LD", 0, offset, 6, "Load value of variable '" + name + "'");
+                    tm.emitRM("LD", AC, offset, GP, "Load value of variable '" + name + "'");
                 }
             }
         } catch (IOException e) {
@@ -189,11 +222,49 @@ public class CodeGenerator implements AbsynVisitor {
         }
     }
 
-    // Stub methods
-    @Override public void visit(IfExp exp, int level, boolean isAddr) {}
+    @Override public void visit(WriteExp node, int level, boolean isAddr) {
+        System.out.println("[CG] WriteExp");
+        try {
+            tm.emitComment("Write Expression");
+            node.output.accept(this, level, false);
+            tm.emitRO("OUT", AC, 0, 0, "Output R0");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void visit(IfExp exp, int offset, boolean isAddr) {
+        try {
+            tm.emitComment("-> if");
+            exp.test.accept(this, offset, false);
+            tm.emitComment("if: jump to else belongs here");
+            int jumpToElseLoc = tm.emitSkip(1);
+            if (exp.thenpart != null) exp.thenpart.accept(this, offset, isAddr);
+            int jumpToEndLoc = -1;
+            if (exp.elsepart != null) {
+                tm.emitComment("if: jump to end belongs here");
+                jumpToEndLoc = tm.emitSkip(1);
+            }
+            int currLoc = tm.emitSkip(0);
+            tm.emitBackup(jumpToElseLoc);
+            tm.emitRM("JEQ", AC, currLoc - jumpToElseLoc, PC, "if: jmp to else");
+            tm.emitRestore();
+            if (exp.elsepart != null) {
+                exp.elsepart.accept(this, offset, isAddr);
+                currLoc = tm.emitSkip(0);
+                tm.emitBackup(jumpToEndLoc);
+                tm.emitRM("LDA", PC, currLoc - jumpToEndLoc, PC, "if: jmp to end");
+                tm.emitRestore();
+            }
+            tm.emitComment("<- if");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override public void visit(ReadExp exp, int level, boolean isAddr) {}
     @Override public void visit(RepeatExp exp, int level, boolean isAddr) {}
-    @Override public void visit(WriteExp exp, int level, boolean isAddr) {}
     @Override public void visit(ArrayDec exp, int level, boolean isAddr) {}
     @Override public void visit(BoolExp exp, int level, boolean isAddr) {}
     @Override public void visit(IndexVar exp, int level, boolean isAddr) {}
@@ -201,6 +272,6 @@ public class CodeGenerator implements AbsynVisitor {
     @Override public void visit(SimpleVar exp, int level, boolean isAddr) {}
     @Override public void visit(WhileExp exp, int level, boolean isAddr) {}
     @Override public void visit(NilExp exp, int level, boolean isAddr) {}
-    @Override public void visit(CallExp exp, int level, boolean isAddr) {}
     @Override public void visit(ReturnExp exp, int level, boolean isAddr) {}
+    @Override public void visit(CallExp exp, int level, boolean isAddr) {}
 }
