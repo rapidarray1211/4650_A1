@@ -152,6 +152,9 @@ public class CodeGenerator implements AbsynVisitor {
         System.out.println("[CG] FunctionDec: " + node.func_name);
         try {
             tm.emitComment("Function " + node.func_name);
+			
+			node.funaddr = tm.getCurrentLoc();
+			
             if ("main".equals(node.func_name)) {
                 mainEntry = tm.getCurrentLoc();
             }
