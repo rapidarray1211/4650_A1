@@ -15,4 +15,19 @@ public class NameTy extends Absyn{
     public void accept( AbsynVisitor visitor, int level, boolean flag ) {
         visitor.visit( this, level, flag );
     }
+	
+	public String getTypeName(int type) {
+		switch (type) {
+			case NameTy.BOOL:
+				return "BOOL";
+			case NameTy.INT:
+				return "INT";
+			case NameTy.VOID:
+				return "VOID";
+			case NameTy.NULL:
+				return "NULL";
+			default:
+				return "Unknown Type";
+		}
+	}
 }

@@ -108,6 +108,7 @@ public class CodeGenerator implements AbsynVisitor {
         }
     }
 
+
     @Override
     public void visit(OpExp node, int level, boolean isAddr) {
         System.out.println("[CG] OpExp");
@@ -263,15 +264,207 @@ public class CodeGenerator implements AbsynVisitor {
         }
     }
 
-    @Override public void visit(ReadExp exp, int level, boolean isAddr) {}
-    @Override public void visit(RepeatExp exp, int level, boolean isAddr) {}
-    @Override public void visit(ArrayDec exp, int level, boolean isAddr) {}
-    @Override public void visit(BoolExp exp, int level, boolean isAddr) {}
-    @Override public void visit(IndexVar exp, int level, boolean isAddr) {}
-    @Override public void visit(NameTy exp, int level, boolean isAddr) {}
-    @Override public void visit(SimpleVar exp, int level, boolean isAddr) {}
-    @Override public void visit(WhileExp exp, int level, boolean isAddr) {}
-    @Override public void visit(NilExp exp, int level, boolean isAddr) {}
-    @Override public void visit(ReturnExp exp, int level, boolean isAddr) {}
-    @Override public void visit(CallExp exp, int level, boolean isAddr) {}
+	@Override
+	public void visit(ReadExp exp, int level, boolean isAddr) {
+		System.out.println("[CG] ReadExp");
+		try {
+			tm.emitComment("Read Expression");
+			tm.emitRO("IN", AC, 0, 0, "Input value");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/*@Override
+	public void visit(RepeatExp exp, int level, boolean isAddr) {
+		System.out.println("[CG] RepeatExp");
+		try {
+			tm.emitComment("-> repeat");
+			
+			// 1. Mark the start of the loop body
+			int loopStart = tm.getCurrentLoc();
+			
+			// 2. Execute the body of the loop
+			exp.exps.accept(this, level, isAddr);
+			
+			// 3. Evaluate the condition after executing the body
+			exp.condition.accept(this, level, false);
+			
+			// 4. If condition is false (0), jump back to start of loop
+			// NOTE: In RepeatExp, we typically loop while condition is false,
+			// so we need to invert the logic compared to WhileExp
+			tm.emitRM("JEQ", AC, loopStart - tm.getCurrentLoc(), PC, "repeat: jump back to start if condition is false");
+			
+			tm.emitComment("<- repeat");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}*/
+	
+	@Override
+	public void visit(ArrayDec exp, int level, boolean isAddr) {
+		System.out.println("[CG] ArrayDec: " + exp.name);
+		try {
+			currentLocalOffset -= exp.size;
+			localVarOffsets.put(exp.name, currentLocalOffset);
+			tm.emitComment("Array Declaration: " + exp.name + " with size " + exp.size + " at offset " + currentLocalOffset);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void visit(BoolExp exp, int level, boolean isAddr) {
+		System.out.println("[CG] BoolExp: " + exp.value);
+		try {
+			int val = exp.value ? 1 : 0;
+			tm.emitComment("Boolean literal: " + val);
+			tm.emitRM("LDC", AC, val, 0, "Load boolean constant into R0");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void visit(IndexVar exp, int level, boolean isAddr) {
+		System.out.println("[CG] IndexVar: " + exp.name);
+		try {
+			exp.index.accept(this, level, false);
+			Integer baseOffset = localVarOffsets.get(exp.name);
+			if (baseOffset == null) {
+				tm.emitComment("[ERROR] Undeclared array: " + exp.name);
+				return;
+			}
+			tm.emitRM("LDA", AC1, baseOffset, GP, "Load base address of array '" + exp.name + "'");
+			tm.emitRO("ADD", AC, AC1, AC, "Compute indexed address");
+			if (!isAddr) {
+				tm.emitRM("LD", AC, 0, AC, "Load array element value");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void visit(NameTy exp, int level, boolean isAddr) {
+		System.out.println("[CG] NameTy: " + exp.getTypeName(exp.type));
+		try {
+			tm.emitComment("Type: " + exp.getTypeName(exp.type));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void visit(SimpleVar exp, int level, boolean isAddr) {
+		System.out.println("[CG] SimpleVar: " + exp.name);
+		try {
+			Integer offset = localVarOffsets.get(exp.name);
+			if (offset == null) {
+				tm.emitComment("[ERROR] Undeclared variable: " + exp.name);
+				return;
+			}
+			if (isAddr) {
+				tm.emitRM("LDA", AC, offset, GP, "Get address of variable '" + exp.name + "'");
+			} else {
+				tm.emitRM("LD", AC, offset, GP, "Load value of variable '" + exp.name + "'");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void visit(WhileExp exp, int level, boolean isAddr) {
+    System.out.println("[CG] WhileExp");
+
+		try {
+			tm.emitComment("-> while");
+			
+			int loopStart = tm.getCurrentLoc();
+			
+			exp.test.accept(this, level, false);
+			
+			int jumpToEndLoc = tm.emitSkip(1);
+			
+			exp.body.accept(this, level, isAddr);
+			
+			tm.emitRM("LDA", PC, loopStart - tm.getCurrentLoc(), PC, "while: jump back to condition");
+			
+			int currentLoc = tm.getCurrentLoc();
+			tm.emitBackup(jumpToEndLoc);
+			tm.emitRM("JEQ", AC, currentLoc - jumpToEndLoc, PC, "while: exit loop if condition is false");
+			tm.emitRestore();
+			
+			tm.emitComment("<- while");
+		} catch (IOException e) {
+			e.printStackTrace();
+    }
+}
+	
+	@Override
+	public void visit(NilExp exp, int level, boolean isAddr) {
+		System.out.println("[CG] NilExp");
+		try {
+			tm.emitComment("Nil Expression: no operation");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void visit(ReturnExp exp, int level, boolean isAddr) {
+		System.out.println("[CG] ReturnExp");
+		try {
+			if(exp.exp != null) {
+				exp.exp.accept(this, level, false);
+			}
+			tm.emitRM("LD", PC, -1, FP, "Return from function");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void visit(CallExp exp, int level, boolean isAddr) {
+		System.out.println("[CG] CallExp: " + exp.func);
+		try {
+			if(exp.args != null) {
+				exp.args.accept(this, level, false);
+			}
+			tm.emitRM("LDA", AC, 1, PC, "Load return address");
+			tm.emitRM("ST", AC, -1, FP, "Store return address");
+			
+			// Get the function address from the funcDef
+			if (exp.funcDef != null) {
+				int funcAddr = exp.funcDef.funaddr;
+				tm.emitRM_Abs("LDA", PC, funcAddr, "Jump to function " + exp.func);
+			} else {
+				tm.emitComment("[ERROR] Function definition not found for: " + exp.func);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+    //@Override public void visit(ReadExp exp, int level, boolean isAddr) {}
+	@Override public void visit(RepeatExp exp, int level, boolean isAddr) {}
+    //@Override public void visit(ArrayDec exp, int level, boolean isAddr) {}
+    //@Override public void visit(BoolExp exp, int level, boolean isAddr) {}
+    //@Override public void visit(IndexVar exp, int level, boolean isAddr) {}
+    //@Override public void visit(NameTy exp, int level, boolean isAddr) {}
+    //@Override public void visit(SimpleVar exp, int level, boolean isAddr) {}
+    //@Override public void visit(WhileExp exp, int level, boolean isAddr) {}
+    //@Override public void visit(NilExp exp, int level, boolean isAddr) {}
+    //@Override public void visit(ReturnExp exp, int level, boolean isAddr) {}
+    //@Override public void visit(CallExp exp, int level, boolean isAddr) {}
 }
