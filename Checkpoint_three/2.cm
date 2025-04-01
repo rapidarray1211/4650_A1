@@ -2,14 +2,14 @@
    Error2: while condition is int instead of bool
    Error3: Cannot add int to array in line 11*/
 
-int fun(int arr[], int size) {
+void main(void) {
     int i;
     int sum;
-    sum = 0;
-    i = 0;
-    while (i) {
-        sum = sum + arr;
-        i = i + 1;
-    }
-    return sum;
+    i = 5;
+    sum = i + i;
+    sum = i * 2;
+    sum = i / 4;
+    sum = i - 1;
+
+    return;
 }

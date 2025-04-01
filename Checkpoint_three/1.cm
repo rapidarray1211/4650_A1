@@ -1,11 +1,19 @@
-int global;
+int sum(int x);
+
+int sum(int x){
+	x = x + 1;
+	return x;
+}
+
 void main(void) {
   int x;
-  x = input();
+  x = 3;
   if (x > 0) {
-    int y;
-    output(x);
+	sum(x);
   } else {
-    output(x);
+	sum(x);
   }
+  while (x > 1) {
+	x = x - 1;
+	}
 }
