@@ -2,13 +2,19 @@ import absyn.*;
 import java.io.*;
 import java.util.*;
 
+import Symbol.AnalyzerPrinter;
+import Symbol.SymbolTable;
+
 public class CodeGenerator implements AbsynVisitor {
     private TMWriter tm;
     private int labelCounter = 0;
     private int tempOffset = -1;
     private int currentLocalOffset = 0;
     private int mainEntry = -1;
-    private int globalOffset = -1;
+    private int globalOffset = 0;
+
+    private SymbolTable symbolTable;
+    private AnalyzerPrinter printer;
 
     public static final int AC = 0;
     public static final int AC1 = 1;
@@ -24,11 +30,15 @@ public class CodeGenerator implements AbsynVisitor {
         } catch (IOException e) {
             System.err.println("Failed to open output file: " + e.getMessage());
         }
+
+        this.printer = new AnalyzerPrinter("symbTree.txt", false);
+        this.symbolTable = new SymbolTable(printer);
     }
 
     public void visit(Absyn root) throws IOException {
         System.out.println("[CG] Visiting Root Node");
         emitPrelude();
+        symbolTable.enterScope("Global");
         root.accept(this, 0, false);
         emitFinale();
         tm.close();
