@@ -23,6 +23,6 @@ public class CallExp extends Exp
     }
 
     public FunctionDec getFunDec(){
-        return this.funcDec;
+        return this.funcDef;
     }
 }

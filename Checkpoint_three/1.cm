@@ -1,7 +1,9 @@
+int global;
 void main(void) {
   int x;
   x = input();
   if (x > 0) {
+    int y;
     output(x);
   } else {
     output(x);

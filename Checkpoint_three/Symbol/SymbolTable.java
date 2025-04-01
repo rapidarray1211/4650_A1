@@ -1,18 +1,14 @@
 package Symbol;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.List;
+import java.util.*;
 
 public class SymbolTable {
-    private HashMap<String, SymbolEntry> table;
+    private final List<Map<String, SymbolEntry>> scopeStack = new ArrayList<>();
     private int currentScope;
-    private AnalyzerPrinter printer;
+    private final AnalyzerPrinter printer;
     private boolean preserve = true;
 
     public SymbolTable(AnalyzerPrinter printer) {
-        this.table = new HashMap<>();
         this.printer = printer;
         this.currentScope = -1;
     }
@@ -23,6 +19,7 @@ public class SymbolTable {
 
     public void enterScope(String context) {
         currentScope++;
+        scopeStack.add(new HashMap<>());
         printer.indent(currentScope);
         printer.printMsg("[ENTER] Entering Scope Level: " + currentScope + (context != null ? " for " + context : ""));
     }
@@ -32,61 +29,72 @@ public class SymbolTable {
         printer.printMsg("[EXIT] Exiting Scope Level: " + currentScope);
         printTable();
 
-        if (!preserve) {
-            Iterator<Map.Entry<String, SymbolEntry>> iterator = table.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, SymbolEntry> entry = iterator.next();
-                if (entry.getValue().scope == currentScope) {
-                    iterator.remove();
-                }
-            }
+        if (!preserve && !scopeStack.isEmpty()) {
+            scopeStack.remove(scopeStack.size() - 1);
         }
 
         currentScope--;
     }
 
     public boolean insert(String name, int type, int dim, int offset, int pc) {
-        if (table.containsKey(name) && table.get(name).scope == currentScope) {
+        Map<String, SymbolEntry> current = scopeStack.get(scopeStack.size() - 1);
+        if (current.containsKey(name)) {
             return false;
         }
-        table.put(name, new SymbolEntry(type, currentScope, dim, offset, pc));
+        current.put(name, new SymbolEntry(type, currentScope, dim, offset, pc));
         return true;
     }
 
     public boolean insert(String name, int type, int dim, int offset, int pc, List<Integer> paramTypes, List<Integer> paramDims) {
-        if (table.containsKey(name) && table.get(name).scope == currentScope) {
+        Map<String, SymbolEntry> current = scopeStack.get(scopeStack.size() - 1);
+        if (current.containsKey(name)) {
             return false;
         }
-        table.put(name, new SymbolEntry(type, currentScope, dim, offset, pc, paramTypes, paramDims));
+        current.put(name, new SymbolEntry(type, currentScope, dim, offset, pc, paramTypes, paramDims));
         return true;
     }
 
     public SymbolEntry lookup(String name) {
-        return table.get(name);
+        for (int i = scopeStack.size() - 1; i >= 0; i--) {
+            Map<String, SymbolEntry> scope = scopeStack.get(i);
+            if (scope.containsKey(name)) {
+                return scope.get(name);
+            }
+        }
+        return null;
     }
 
     public void printTable() {
         if (currentScope == -1) return;
         printer.indent(currentScope);
         printer.printMsg("[PRINT] Symbol Table Dump (Current Scope: " + currentScope + ")");
-        if (table.isEmpty()) {
-            printer.indent(currentScope);
-            printer.printMsg("[EMPTY] Symbol Table is empty.");
-        } else {
-            for (Map.Entry<String, SymbolEntry> entry : table.entrySet()) {
-                if (entry.getValue().scope <= currentScope) {
+
+        boolean empty = true;
+        Set<String> printed = new HashSet<>();
+        
+        for (int i = currentScope; i >= 0; i--) {
+            Map<String, SymbolEntry> scope = scopeStack.get(i);
+            for (Map.Entry<String, SymbolEntry> entry : scope.entrySet()) {
+                if (!printed.contains(entry.getKey())) {
                     printer.indent(currentScope);
                     printer.printMsg(entry.getKey() + " -> " + entry.getValue());
+                    printed.add(entry.getKey());
+                    empty = false;
                 }
             }
         }
+        
+        if (empty) {
+            printer.indent(currentScope);
+            printer.printMsg("[EMPTY] Symbol Table is empty.");
+        }
+        
     }
 
     public SymbolEntry lookupGlobal(String name) {
-        for (Map.Entry<String, SymbolEntry> entry : table.entrySet()) {
-            if (entry.getKey().equals(name) && entry.getValue().scope == 1) {
-                return entry.getValue();
-            }
+        if (scopeStack.size() > 1) {
+            Map<String, SymbolEntry> globalScope = scopeStack.get(1);
+            return globalScope.get(name);
         }
         return null;
     }
