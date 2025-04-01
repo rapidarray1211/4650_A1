@@ -3,6 +3,7 @@ import java.io.*;
 import java.util.*;
 
 import Symbol.AnalyzerPrinter;
+import Symbol.SymbolEntry;
 import Symbol.SymbolTable;
 
 public class CodeGenerator implements AbsynVisitor {
@@ -37,10 +38,11 @@ public class CodeGenerator implements AbsynVisitor {
 
     public void visit(Absyn root) throws IOException {
         System.out.println("[CG] Visiting Root Node");
-        emitPrelude();
         symbolTable.enterScope("Global");
+        emitPrelude();
         root.accept(this, 0, false);
         emitFinale();
+        symbolTable.exitScope("Leaving Global");
         tm.close();
     }
 
@@ -53,11 +55,17 @@ public class CodeGenerator implements AbsynVisitor {
 
         int savedLoc = tm.emitSkip(1);
         tm.emitComment("Jump around i/o routines here");
+        
+        //add input to symbol table.
+        symbolTable.insert("input",NameTy.INT,0,0,tm.getCurrentLoc());
 
         tm.emitComment("code for input routine");
         tm.emitRM("ST", AC, -1, FP, "store return");  
         tm.emitRO("IN", AC, 0, 0, "input");
         tm.emitRM("LD", PC, -1, FP, "return to caller");
+
+        //add output to symbol table.
+        symbolTable.insert("output",NameTy.VOID,1,0,tm.getCurrentLoc());
 
         tm.emitComment("code for output routine");
         tm.emitRM("ST", AC, -1, FP, "store return"); 
@@ -168,12 +176,28 @@ public class CodeGenerator implements AbsynVisitor {
             if ("main".equals(node.func_name)) {
                 mainEntry = tm.getCurrentLoc();
             }
-            localVarOffsets.clear();
-            currentLocalOffset = -1;
+
             if (node.body instanceof CompoundExp) {
+                SymbolEntry protFunc = symbolTable.lookup(node.func_name);
+
+                if (protFunc != null){
+                    //If prototype is found, make a jump to the function
+                    int currLoc = tm.getCurrentLoc();
+                    int protLoc = protFunc.pc;
+                    tm.emitBackup(protLoc);
+                    tm.emitRM("LDA",PC,currLoc - protLoc,PC,"Jump to function from prototype");
+                    tm.emitRestore();
+                    
+                }
+                symbolTable.insert(node.func_name,node.return_type.type,0,0,tm.getCurrentLoc());
+                symbolTable.enterScope(node.func_name);
                 node.body.accept(this, level + 1, isAddr);
+                symbolTable.exitScope(node.func_name);
             } else {
-                tm.emitComment("[WARN] Function body is not a CompoundExp");
+                //If prototype, skip loc for backpatch
+                tm.emitComment("Prototype function, Jump to function here.");
+                symbolTable.insert(node.func_name, node.return_type.type, 0, 0, tm.emitSkip(1));
+
             }
         } catch (IOException e) {
             e.printStackTrace();
