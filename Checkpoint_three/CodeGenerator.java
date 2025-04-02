@@ -169,6 +169,8 @@ public class CodeGenerator implements AbsynVisitor {
     public void visit(FunctionDec node, int level, boolean isAddr) {
         System.out.println("[CG] FunctionDec: " + node.func_name);
         try {
+            tm.emitComment("Jump around function body here");
+            int savedLoc = tm.emitSkip(1);
             tm.emitComment("Function " + node.func_name);
 			
 			node.funaddr = tm.getCurrentLoc();
@@ -199,6 +201,10 @@ public class CodeGenerator implements AbsynVisitor {
                 symbolTable.insert(node.func_name, node.return_type.type, 0, 0, tm.emitSkip(1));
 
             }
+            int currLoc = tm.getCurrentLoc();
+            tm.emitBackup(savedLoc);
+            tm.emitRM("LDA",PC,currLoc-savedLoc,PC,"Jump around function");
+            tm.emitRestore();
         } catch (IOException e) {
             e.printStackTrace();
         }
