@@ -98,4 +98,8 @@ public class SymbolTable {
         }
         return null;
     }
+
+    public int getCurrentScope(){
+        return this.currentScope;
+    }
 }

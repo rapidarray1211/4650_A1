@@ -10,7 +10,7 @@ public class CodeGenerator implements AbsynVisitor {
     private TMWriter tm;
     private int labelCounter = 0;
     private int tempOffset = -1;
-    private int currentLocalOffset = 0;
+    private int currentLocalOffset = -1;
     private int mainEntry = -1;
     private int globalOffset = 0;
 
@@ -193,6 +193,10 @@ public class CodeGenerator implements AbsynVisitor {
                 }
                 symbolTable.insert(node.func_name,node.return_type.type,0,0,tm.getCurrentLoc());
                 symbolTable.enterScope(node.func_name);
+                currentLocalOffset = -1;
+                tm.emitRM("ST", AC,currentLocalOffset, FP, "Store return value");
+                currentLocalOffset --;
+                node.parameters.accept(this, level + 1, isAddr);
                 node.body.accept(this, level + 1, isAddr);
                 symbolTable.exitScope(node.func_name);
             } else {
@@ -214,9 +218,16 @@ public class CodeGenerator implements AbsynVisitor {
     public void visit(SimpleDec node, int level, boolean isAddr) {
         System.out.println("[CG] SimpleDec: " + node.name);
         try {
-            currentLocalOffset--;
-            localVarOffsets.put(node.name, currentLocalOffset);
-            tm.emitComment("Variable Declaration: " + node.name + " at offset " + currentLocalOffset);
+            if (symbolTable.getCurrentScope() > 0){
+                symbolTable.insert(node.name, node.type.type,0, currentLocalOffset, 0);            
+                tm.emitComment("Variable Declaration: " + node.name + " at local offset " + currentLocalOffset);
+                currentLocalOffset --;
+            } else{
+                symbolTable.insert(node.name, node.type.type,0, globalOffset, 0);            
+                tm.emitComment("Variable Declaration: " + node.name + " at global offset " + globalOffset);
+                globalOffset --;
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -348,9 +359,18 @@ public class CodeGenerator implements AbsynVisitor {
 	public void visit(ArrayDec exp, int level, boolean isAddr) {
 		System.out.println("[CG] ArrayDec: " + exp.name);
 		try {
-			currentLocalOffset -= exp.size;
-			localVarOffsets.put(exp.name, currentLocalOffset);
-			tm.emitComment("Array Declaration: " + exp.name + " with size " + exp.size + " at offset " + currentLocalOffset);
+            if (symbolTable.getCurrentScope() > 0){
+                //add one for the size 
+                symbolTable.insert(exp.name, exp.type.type, exp.size + 1, currentLocalOffset, 0);
+			    tm.emitComment("Array Declaration: " + exp.name + " with size " + exp.size + " at local offset " + currentLocalOffset);
+                currentLocalOffset = currentLocalOffset - exp.size-1;
+            }
+            else{
+                symbolTable.insert(exp.name, exp.type.type, exp.size + 1, globalOffset, 0);
+			    tm.emitComment("Array Declaration: " + exp.name + " with size " + exp.size + " at global offset " + globalOffset);
+                globalOffset = globalOffset - exp.size - 1;
+            }
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
