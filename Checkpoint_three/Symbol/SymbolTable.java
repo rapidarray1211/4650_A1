@@ -24,11 +24,33 @@ public class SymbolTable {
         printer.printMsg("[ENTER] Entering Scope Level: " + currentScope + (context != null ? " for " + context : ""));
     }
 
+    public void enterScope(String context, boolean print) {
+        currentScope++;
+        scopeStack.add(new HashMap<>());
+        if (print != false) {
+            printer.indent(currentScope);
+            printer.printMsg("[ENTER] Entering Scope Level: " + currentScope + (context != null ? " for " + context : ""));
+        }
+    }
+
     public void exitScope(String context) {
         printer.indent(currentScope);
         printer.printMsg("[EXIT] Exiting Scope Level: " + currentScope);
         printTable();
 
+        if (!preserve && !scopeStack.isEmpty()) {
+            scopeStack.remove(scopeStack.size() - 1);
+        }
+
+        currentScope--;
+    }
+
+    public void exitScope(String context, boolean print) {
+        if (print != false) {
+            printer.indent(currentScope);
+            printer.printMsg("[EXIT] Exiting Scope Level: " + currentScope);
+            printTable();
+        }
         if (!preserve && !scopeStack.isEmpty()) {
             scopeStack.remove(scopeStack.size() - 1);
         }

@@ -43,7 +43,6 @@ class Main {
                         sPrinter.printMsg("\nStarting Semantic Analysis...");
                         SemanticAnalyzer analyzer = new SemanticAnalyzer(sPrinter);
                         analyzer.analyze((DecList) result);
-                        sPrinter.printMsg("Semantic Analysis Completed.");
                         if (sArg) sPrinter.close();
                         if (cArg) {
                             CodeGenerator generator = new CodeGenerator(cFilename);

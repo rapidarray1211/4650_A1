@@ -324,7 +324,6 @@ public class SemanticAnalyzer implements AbsynVisitor {
             }
         }
     
-        // 🔹 Prevent operations involving arrays
         if (leftDim > 0 || rightDim > 0) {
             errorOutput = errorOutput + "\n[ERROR] Cannot perform arithmetic operation on arrays at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
@@ -406,7 +405,26 @@ public class SemanticAnalyzer implements AbsynVisitor {
                         errorFlag = true;
                     }
                 }
+            } else if (args.head instanceof CallExp) {
+                CallExp callExp = (CallExp) args.head;
+                SymbolEntry callEntry = symbolTable.lookup(callExp.func);
+                if (callEntry != null) {
+                    argType = callEntry.type;
+                    argDim = 0;
+                } else {
+                    errorOutput = errorOutput + "\n[ERROR] Function '" + callExp.func + "' is undeclared at line " + (node.row + 1) + " and column " + (node.col + 1);
+                    errorFlag = true;
+                }
             }
+            else if (args.head instanceof OpExp) {
+                OpExp opExp = (OpExp) args.head;
+                args.head.accept(this, level, flag);
+            
+                argType = getTypeFromString(getExpressionType(opExp));
+                argDim = 0;
+            }
+            
+            
     
             actualTypes.add(argType);
             actualDims.add(argDim);
@@ -438,7 +456,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
             // Ensure base types (`int`, `bool`) match, but ignore specific array sizes
             else if (!expectedTypes.get(i).equals(actualTypes.get(i))) {
-                errorOutput = errorOutput + "\n[ERROR] Argument " + (i + 1) + " of function '" + node.func + "' expects type '" + expectedTypes.get(i) + "' but got '" + actualTypes.get(i) + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
+                errorOutput = errorOutput + "\n[ERROR] Argument " + (i + 1) + " of function '" + node.func + "' expects type '" + getTypeAsString(expectedTypes.get(i)) + "' but got '" + getTypeAsString(actualTypes.get(i)) + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
                 errorFlag = true;
             }
         }
@@ -503,10 +521,12 @@ public class SemanticAnalyzer implements AbsynVisitor {
     
         node.exp.accept(this, level, flag);
         String returnType = getExpressionType(node.exp);
+        // System.out.println("RETURN TYPE" + returnType); 
         if (!returnType.equals(currentFunctionReturnType) && !currentFunctionReturnType.equals("void")) {
             errorOutput = errorOutput + "\n[ERROR] Function must return '" + currentFunctionReturnType + "', but got '" + returnType + "' at line " + (node.row + 1) + " and column " + (node.col + 1);
             errorFlag = true;
         }
+        // System.out.println("\n\n\n" + returnType);
     }
     
     
@@ -819,6 +839,5 @@ public class SemanticAnalyzer implements AbsynVisitor {
             return leftType; 
         }
         return "unknown"; 
-    }
-    
+    }    
 }

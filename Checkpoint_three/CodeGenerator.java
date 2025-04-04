@@ -36,12 +36,12 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     public void visit(Absyn root) throws IOException {
-        System.out.println("[CG] Visiting Root Node");
-        symbolTable.enterScope("Global");
+        //System.out.println("[CG] Visiting Root Node");
+        symbolTable.enterScope("Global", false);
         emitPrelude();
         root.accept(this, 0, false);
         emitFinale();
-        symbolTable.exitScope("Leaving Global");
+        symbolTable.exitScope("Leaving Global", false);
         symbolTable.printTable();
         tm.close();
     }
@@ -96,7 +96,7 @@ public class CodeGenerator implements AbsynVisitor {
 
     @Override
     public void visit(IntExp node, int level, boolean isAddr) {
-        System.out.println("[CG] IntExp: " + node.value);
+        //System.out.println("[CG] IntExp: " + node.value);
         try {
             int value = Integer.parseInt(node.value);
             tm.emitComment("Integer literal: " + value);
@@ -107,7 +107,7 @@ public class CodeGenerator implements AbsynVisitor {
     }
     @Override
     public void visit(AssignExp node, int level, boolean isAddr) {
-        System.out.println("[CG] AssignExp");
+        //System.out.println("[CG] AssignExp");
         try {
             tm.emitComment("-> op");
         
@@ -138,7 +138,7 @@ public class CodeGenerator implements AbsynVisitor {
 
     @Override
     public void visit(OpExp node, int level, boolean isAddr) {
-        System.out.println("[CG] OpExp");
+        //System.out.println("[CG] OpExp");
         try {
             tm.emitComment("Binary Operation");
             node.left.accept(this, level, false);
@@ -213,7 +213,7 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override public void visit(DecList node, int level, boolean isAddr) {
-        System.out.println("[CG] DecList");
+        //System.out.println("[CG] DecList");
         while (node != null) {
             if (node.head != null) node.head.accept(this, level, isAddr);
             node = node.tail;
@@ -222,7 +222,7 @@ public class CodeGenerator implements AbsynVisitor {
 
     @Override
     public void visit(FunctionDec node, int level, boolean isAddr) {
-        System.out.println("[CG] FunctionDec: " + node.func_name);
+        //System.out.println("[CG] FunctionDec: " + node.func_name);
         try {
             tm.emitComment("-> fundecl");
             tm.emitComment("Jump around function body here");
@@ -244,9 +244,9 @@ public class CodeGenerator implements AbsynVisitor {
                 tm.emitRestore();
             }
             // Insert function entry and enter new scope
-            System.out.println("Inserting function with offset 0: " + node.func_name );
+            //System.out.println("Inserting function with offset 0: " + node.func_name );
             symbolTable.insert(node.func_name, node.return_type.type, 0, 0, tm.getCurrentLoc());
-            symbolTable.enterScope(node.func_name);
+            symbolTable.enterScope(node.func_name, false);
             tm.emitRM("ST", AC, -1, FP, "Store return value");
             VarDecList params = node.parameters;
             while (params != null) {
@@ -269,7 +269,7 @@ public class CodeGenerator implements AbsynVisitor {
             tm.emitRM("LDA", PC, currLoc - savedLoc, PC, "Jump around function");
             tm.emitRestore();
             tm.emitComment("<- fundec1");
-            symbolTable.exitScope(node.func_name);
+            symbolTable.exitScope(node.func_name, false);
     } catch (IOException e) {
         e.printStackTrace();
     }
@@ -280,15 +280,15 @@ public class CodeGenerator implements AbsynVisitor {
 
     @Override
     public void visit(SimpleDec node, int level, boolean isAddr) {
-        System.out.println("[CG] SimpleDec: " + node.name);
+        //System.out.println("[CG] SimpleDec: " + node.name);
         try {
             if (symbolTable.getCurrentScope() > 0){
-                System.out.println("Inserting simpledec into symbol table at offset " + currentLocalOffset + " at node.name:" + node.name );
+                //System.out.println("Inserting simpledec into symbol table at offset " + currentLocalOffset + " at node.name:" + node.name );
                 symbolTable.insert(node.name, node.type.type,0, currentLocalOffset, 0);            
                 tm.emitComment("Variable Declaration: " + node.name + " at local offset " + currentLocalOffset);
                 currentLocalOffset --;
             } else{
-                System.out.println("Inserting simpledec into symbol table at offset " + globalOffset + " at node.name:" + node.name );
+                //System.out.println("Inserting simpledec into symbol table at offset " + globalOffset + " at node.name:" + node.name );
                 symbolTable.insert(node.name, node.type.type,0, globalOffset, 0);            
                 tm.emitComment("Variable Declaration: " + node.name + " at global offset " + globalOffset);
                 globalOffset --;
@@ -300,7 +300,7 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override public void visit(CompoundExp node, int level, boolean isAddr) {
-        System.out.println("[CG] CompoundExp");
+        //System.out.println("[CG] CompoundExp");
         try {
             tm.emitComment("-> compound statement");
             if (node.decs != null) node.decs.accept(this, level + 1, isAddr);
@@ -313,13 +313,13 @@ public class CodeGenerator implements AbsynVisitor {
     @Override
     //Done but needs indexvar
     public void visit(VarExp node, int level, boolean isAddr) {
-        System.out.println("[CG] VarExp");
+        //System.out.println("[CG] VarExp");
         try {
             if (node.variable instanceof SimpleVar) {
                 String name = ((SimpleVar) node.variable).name;
                 
                 SymbolEntry entry = symbolTable.lookup(name);
-                System.out.println("[DEBUG] Lookup '" + name + "' => offset=" + entry.offset + " scope=" + entry.scope);
+                //System.out.println("[DEBUG] Lookup '" + name + "' => offset=" + entry.offset + " scope=" + entry.scope);
                 int baseReg = entry.scope == 0 ? GP : FP;
                 if (isAddr) {
                     tm.emitRM("LDA", AC, entry.offset, baseReg, "Get address of variable '" + name + "'");
@@ -353,7 +353,7 @@ public class CodeGenerator implements AbsynVisitor {
     
 
     @Override public void visit(VarDecList node, int level, boolean isAddr) {
-        System.out.println("[CG] VarDecList");
+        //System.out.println("[CG] VarDecList");
         while (node != null) {
             if (node.head != null) node.head.accept(this, level, isAddr);
             // currentLocalOffset--;
@@ -362,7 +362,7 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override public void visit(ExpList node, int level, boolean isAddr) {
-        System.out.println("[CG] ExpList");
+        //System.out.println("[CG] ExpList");
         while (node != null) {
             if (node.head != null) node.head.accept(this, level, isAddr);
             node = node.tail;
@@ -370,7 +370,7 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override public void visit(WriteExp node, int level, boolean isAddr) {
-        System.out.println("[CG] WriteExp");
+        //System.out.println("[CG] WriteExp");
         try {
             tm.emitComment("Write Expression");
             node.output.accept(this, level, false);
@@ -407,7 +407,7 @@ public class CodeGenerator implements AbsynVisitor {
 
 	@Override
 	public void visit(ReadExp exp, int level, boolean isAddr) {
-		System.out.println("[CG] ReadExp");
+		//System.out.println("[CG] ReadExp");
 		try {
 			tm.emitComment("Read Expression");
 			tm.emitRO("IN", AC, 0, 0, "Input value");
@@ -416,44 +416,19 @@ public class CodeGenerator implements AbsynVisitor {
 		}
 	}
 	
-	/*@Override
-	public void visit(RepeatExp exp, int level, boolean isAddr) {
-		System.out.println("[CG] RepeatExp");
-		try {
-			tm.emitComment("-> repeat");
-			
-			// 1. Mark the start of the loop body
-			int loopStart = tm.getCurrentLoc();
-			
-			// 2. Execute the body of the loop
-			exp.exps.accept(this, level, isAddr);
-			
-			// 3. Evaluate the condition after executing the body
-			exp.condition.accept(this, level, false);
-			
-			// 4. If condition is false (0), jump back to start of loop
-			// NOTE: In RepeatExp, we typically loop while condition is false,
-			// so we need to invert the logic compared to WhileExp
-			tm.emitRM("JEQ", AC, loopStart - tm.getCurrentLoc(), PC, "repeat: jump back to start if condition is false");
-			
-			tm.emitComment("<- repeat");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}*/
 	
 	@Override
 	public void visit(ArrayDec exp, int level, boolean isAddr) {
-		System.out.println("[CG] ArrayDec: " + exp.name);
+		//System.out.println("[CG] ArrayDec: " + exp.name);
 		try {
             if (symbolTable.getCurrentScope() > 0){
-                System.out.println("Inserting into symbol table at offset " + currentLocalOffset + " at exp.name:" + exp.name );
+                //System.out.println("Inserting into symbol table at offset " + currentLocalOffset + " at exp.name:" + exp.name );
                 symbolTable.insert(exp.name, exp.type.type, exp.size + 1, currentLocalOffset, 0);
 			    tm.emitComment("Array Declaration: " + exp.name + " with size " + exp.size + " at local offset " + currentLocalOffset);
                 currentLocalOffset = currentLocalOffset - exp.size-1;
             }
             else{
-                System.out.println("Inserting into symbol table at offset " + globalOffset + " at exp.name:" + exp.name );
+                //System.out.println("Inserting into symbol table at offset " + globalOffset + " at exp.name:" + exp.name );
                 symbolTable.insert(exp.name, exp.type.type, exp.size + 1, globalOffset, 0);
 			    tm.emitComment("Array Declaration: " + exp.name + " with size " + exp.size + " at global offset " + globalOffset);
                 globalOffset = globalOffset - exp.size - 1;
@@ -466,7 +441,7 @@ public class CodeGenerator implements AbsynVisitor {
 	
 	@Override
 	public void visit(BoolExp exp, int level, boolean isAddr) {
-		System.out.println("[CG] BoolExp: " + exp.value);
+		//System.out.println("[CG] BoolExp: " + exp.value);
 		try {
 			int val = exp.value ? 1 : 0;
 			tm.emitComment("Boolean literal: " + val);
@@ -478,7 +453,7 @@ public class CodeGenerator implements AbsynVisitor {
 	
     @Override
     public void visit(IndexVar exp, int level, boolean isAddr) {
-        System.out.println("[CG] IndexVar: " + exp.name);
+        //System.out.println("[CG] IndexVar: " + exp.name);
         try {
             // Evaluate index expression first
             exp.index.accept(this, level, false);
@@ -504,7 +479,7 @@ public class CodeGenerator implements AbsynVisitor {
 	
 	@Override
 	public void visit(NameTy exp, int level, boolean isAddr) {
-		System.out.println("[CG] NameTy: " + exp.getTypeName(exp.type));
+		//System.out.println("[CG] NameTy: " + exp.getTypeName(exp.type));
 		try {
 			tm.emitComment("Type: " + exp.getTypeName(exp.type));
 		} catch (IOException e) {
@@ -515,7 +490,7 @@ public class CodeGenerator implements AbsynVisitor {
     @Override
     //done
     public void visit(SimpleVar exp, int level, boolean isAddr) {
-        System.out.println("[CG] SimpleVar: " + exp.name);
+        //System.out.println("[CG] SimpleVar: " + exp.name);
         try {
             tm.emitComment("-> id");
             SymbolEntry entry = symbolTable.lookup(exp.name);
@@ -537,7 +512,7 @@ public class CodeGenerator implements AbsynVisitor {
 	
     @Override
     public void visit(WhileExp exp, int level, boolean isAddr) {
-        System.out.println("[CG] WhileExp");
+        //System.out.println("[CG] WhileExp");
         try {
             tm.emitComment("-> while");
             tm.emitComment("while: evaluate condition");
@@ -563,7 +538,7 @@ public class CodeGenerator implements AbsynVisitor {
     
 	@Override
 	public void visit(NilExp exp, int level, boolean isAddr) {
-		System.out.println("[CG] NilExp");
+		//System.out.println("[CG] NilExp");
 		try {
 			tm.emitComment("Nil Expression: no operation");
 		} catch (IOException e) {
@@ -573,7 +548,7 @@ public class CodeGenerator implements AbsynVisitor {
 	
 	@Override
 	public void visit(ReturnExp exp, int level, boolean isAddr) {
-		System.out.println("[CG] ReturnExp");
+		//System.out.println("[CG] ReturnExp");
 		try {
 			if(exp.exp != null) {
 				exp.exp.accept(this, level, false);
@@ -586,7 +561,7 @@ public class CodeGenerator implements AbsynVisitor {
     
     @Override
     public void visit(CallExp exp, int level, boolean isAddr) {
-        System.out.println("[CG] CallExp: " + exp.func);
+        //System.out.println("[CG] CallExp: " + exp.func);
         try {
             tm.emitComment("Call function: " + exp.func);
     
@@ -616,28 +591,5 @@ public class CodeGenerator implements AbsynVisitor {
             e.printStackTrace();
         }
     }
-    
-    
-
-    
-
-
-
-
-
-
-
-
-
-    //@Override public void visit(ReadExp exp, int level, boolean isAddr) {}
 	@Override public void visit(RepeatExp exp, int level, boolean isAddr) {}
-    //@Override public void visit(ArrayDec exp, int level, boolean isAddr) {}
-    //@Override public void visit(BoolExp exp, int level, boolean isAddr) {}
-    //@Override public void visit(IndexVar exp, int level, boolean isAddr) {}
-    //@Override public void visit(NameTy exp, int level, boolean isAddr) {}
-    //@Override public void visit(SimpleVar exp, int level, boolean isAddr) {}
-    //@Override public void visit(WhileExp exp, int level, boolean isAddr) {}
-    //@Override public void visit(NilExp exp, int level, boolean isAddr) {}
-    //@Override public void visit(ReturnExp exp, int level, boolean isAddr) {}
-    //@Override public void visit(CallExp exp, int level, boolean isAddr) {}
 }
