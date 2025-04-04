@@ -23,7 +23,7 @@ public class SymbolEntry {
         this.scope = scope;
         this.type = type;
         this.dim = dimensions;
-        this.offset = offset * dimensions;
+        this.offset = offset;
         this.pc = pc;
         this.paramTypes = null;
         this.paramDims = null;

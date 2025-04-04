@@ -5,7 +5,7 @@ import Symbol.SymbolTable;
 import Symbol.AnalyzerPrinter;
 
 class Main {
-	public static final boolean DEBUG = true;
+    public static final boolean DEBUG = true;
     public static final boolean SHOW_TREE = true;
     public static final boolean RUN_SEMANTIC_ANALYSIS = true;
 
@@ -46,7 +46,6 @@ class Main {
                         sPrinter.printMsg("Semantic Analysis Completed.");
                         if (sArg) sPrinter.close();
                         if (cArg) {
-                            SymbolTable table = analyzer.getSymbolTable();
                             CodeGenerator generator = new CodeGenerator(cFilename);
                             generator.visit(result);
                         }
@@ -61,24 +60,24 @@ class Main {
         }
     }
 
-	public static boolean checkForArg(String argCheck, String[] argv){
-		for (String arg : argv) {
+    public static boolean checkForArg(String argCheck, String[] argv){
+        for (String arg : argv) {
             if(argCheck.equals(arg)){
-				System.out.println("Found:" + arg);
-				return true;
-			}
+                System.out.println("Found:" + arg);
+                return true;
+            }
         }
-		return false;
-	}
+        return false;
+    }
 
-	public static String modifyFileName(String fileName, String Extension){
-		int dotIndex = fileName.lastIndexOf(".");
-		if (dotIndex != -1) {
-			System.out.println("Changing to file" + fileName.substring(0, dotIndex) + Extension);
+    public static String modifyFileName(String fileName, String Extension){
+        int dotIndex = fileName.lastIndexOf(".");
+        if (dotIndex != -1) {
+            System.out.println("Changing to file" + fileName.substring(0, dotIndex) + Extension);
             return fileName.substring(0, dotIndex) + Extension;
         } else {
             System.out.println("Could not find file extension.");
-			return "";
+            return "";
         }
-	}
+    }
 }
