@@ -310,13 +310,8 @@ public class CodeGenerator implements AbsynVisitor {
 
     @Override public void visit(CompoundExp node, int level, boolean isAddr) {
         System.out.println("[CG] CompoundExp");
-        try {
-            tm.emitComment("-> compound statement");
-            if (node.decs != null) node.decs.accept(this, level + 1, isAddr);
-            if (node.exps != null) node.exps.accept(this, level + 1, isAddr);
-            tm.emitComment("<- compound statement");
-        }
-        catch (Exception e){}
+        if (node.decs != null) node.decs.accept(this, level + 1, isAddr);
+        if (node.exps != null) node.exps.accept(this, level + 1, isAddr);
     }
 
     @Override
@@ -343,6 +338,9 @@ public class CodeGenerator implements AbsynVisitor {
                     tm.emitRM("ST",AC,currentLocalOffset,FP,"Store Value");
                 }
             }
+            else if(node.variable instanceof  IndexVar variable){
+                variable.accept(this, level, isAddr);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -353,7 +351,6 @@ public class CodeGenerator implements AbsynVisitor {
         System.out.println("[CG] VarDecList");
         while (node != null) {
             if (node.head != null) node.head.accept(this, level, isAddr);
-            // currentLocalOffset--;
             node = node.tail;
         }
     }
@@ -385,16 +382,21 @@ public class CodeGenerator implements AbsynVisitor {
             tm.emitComment("if: jump to else belongs here");
             int jumpToElseLoc = tm.emitSkip(1);
             if (exp.thenpart != null) exp.thenpart.accept(this, offset, isAddr);
-            int jumpToEndLoc = tm.emitSkip(0);
+            int jumpToEndLoc = -1;
             if (exp.elsepart != null) {
                 tm.emitComment("if: jump to end belongs here");
-                jumpToEndLoc = tm.emitSkip(0);
+                jumpToEndLoc = tm.emitSkip(1);
             }
+            int currLoc = tm.emitSkip(0);
             tm.emitBackup(jumpToElseLoc);
-            tm.emitRM_Abs("JEQ", 0, jumpToEndLoc, "if: jmp to else");
+            tm.emitRM("JEQ", AC, currLoc - jumpToElseLoc, PC, "if: jmp to else");
             tm.emitRestore();
             if (exp.elsepart != null) {
                 exp.elsepart.accept(this, offset, isAddr);
+                currLoc = tm.emitSkip(0);
+                tm.emitBackup(jumpToEndLoc);
+                tm.emitRM("LDA", PC, currLoc - jumpToEndLoc, PC, "if: jmp to end");
+                tm.emitRestore();
             }
             tm.emitComment("<- if");
         } catch (IOException e) {
