@@ -252,7 +252,7 @@ public class CodeGenerator implements AbsynVisitor {
             while (params != null) {
                 if (params.head instanceof SimpleDec) {
                     String name = ((SimpleDec) params.head).name;
-                    symbolTable.insert(name, ((ArrayDec)params.head).type.type, 0, currentLocalOffset,  0);
+                    symbolTable.insert(name, ((SimpleDec)params.head).type.type, 0, currentLocalOffset,  0);
                     currentLocalOffset--;
                 } else if (params.head instanceof ArrayDec) {
                     String name = ((ArrayDec) params.head).name;
@@ -301,8 +301,13 @@ public class CodeGenerator implements AbsynVisitor {
 
     @Override public void visit(CompoundExp node, int level, boolean isAddr) {
         System.out.println("[CG] CompoundExp");
-        if (node.decs != null) node.decs.accept(this, level + 1, isAddr);
-        if (node.exps != null) node.exps.accept(this, level + 1, isAddr);
+        try {
+            tm.emitComment("-> compound statement");
+            if (node.decs != null) node.decs.accept(this, level + 1, isAddr);
+            if (node.exps != null) node.exps.accept(this, level + 1, isAddr);
+            tm.emitComment("<- compound statement");
+        }
+        catch (Exception e){}
     }
 
     @Override
@@ -322,6 +327,25 @@ public class CodeGenerator implements AbsynVisitor {
                     tm.emitRM("LD", AC, entry.offset, baseReg, "Load value of variable '" + name + "'");
                 }
             }
+            else if (node.variable instanceof IndexVar) {
+                IndexVar indexVar = (IndexVar) node.variable;
+                String name = indexVar.name;
+
+                SymbolEntry entry = symbolTable.lookup(name);
+                if (entry == null) {
+                    tm.emitComment("[ERROR] Undeclared array: " + name);
+                    return;
+                }
+
+                int baseReg = (entry.scope == 0) ? GP : FP;
+
+                tm.emitComment("-> subs");
+                tm.emitRM("LD", AC, entry.offset, baseReg, "load id");
+                tm.emitRM("ST", AC, currentLocalOffset--, baseReg, "store array address");
+                indexVar.index.accept(this, level, false);
+
+                tm.emitComment("<- subs");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -332,6 +356,7 @@ public class CodeGenerator implements AbsynVisitor {
         System.out.println("[CG] VarDecList");
         while (node != null) {
             if (node.head != null) node.head.accept(this, level, isAddr);
+            // currentLocalOffset--;
             node = node.tail;
         }
     }
@@ -363,21 +388,16 @@ public class CodeGenerator implements AbsynVisitor {
             tm.emitComment("if: jump to else belongs here");
             int jumpToElseLoc = tm.emitSkip(1);
             if (exp.thenpart != null) exp.thenpart.accept(this, offset, isAddr);
-            int jumpToEndLoc = -1;
+            int jumpToEndLoc = tm.emitSkip(0);
             if (exp.elsepart != null) {
                 tm.emitComment("if: jump to end belongs here");
-                jumpToEndLoc = tm.emitSkip(1);
+                jumpToEndLoc = tm.emitSkip(0);
             }
-            int currLoc = tm.emitSkip(0);
             tm.emitBackup(jumpToElseLoc);
-            tm.emitRM("JEQ", AC, currLoc - jumpToElseLoc, PC, "if: jmp to else");
+            tm.emitRM_Abs("JEQ", 0, jumpToEndLoc, "if: jmp to else");
             tm.emitRestore();
             if (exp.elsepart != null) {
                 exp.elsepart.accept(this, offset, isAddr);
-                currLoc = tm.emitSkip(0);
-                tm.emitBackup(jumpToEndLoc);
-                tm.emitRM("LDA", PC, currLoc - jumpToEndLoc, PC, "if: jmp to end");
-                tm.emitRestore();
             }
             tm.emitComment("<- if");
         } catch (IOException e) {
@@ -472,15 +492,10 @@ public class CodeGenerator implements AbsynVisitor {
     
             int baseReg = entry.scope == 0 ? GP : FP;
     
-            // Load base address of array into AC1
-            tm.emitRM("LDA", AC1, entry.offset, baseReg, "Load base address of array '" + exp.name + "'");
-    
-            // Add index offset to get element address
-            tm.emitRO("ADD", AC, AC1, AC, "Compute indexed address");
-    
-            if (!isAddr) {
-                tm.emitRM("LD", AC, 0, AC, "Load array element value");
-            }
+            tm.emitComment("-> subs");
+            tm.emitRM("LD", AC1, entry.offset, baseReg, "Load id value");
+            tm.emitRM("ST", AC, entry.offset--, baseReg, "Store array addr");
+            tm.emitComment("<- subs");
         } catch (IOException e) {
             e.printStackTrace();
         }
