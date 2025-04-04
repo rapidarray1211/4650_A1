@@ -1,6 +1,4 @@
-/* Error1: missing main function
-   Error2: while condition is int instead of bool
-   Error3: Cannot add int to array in line 11*/
+/* Test for OP exp*/
 
 void main(void) {
     int i;
@@ -11,5 +9,6 @@ void main(void) {
     sum = i / 4;
     sum = i - 1;
 
+    output(sum);
     return;
 }

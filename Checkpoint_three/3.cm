@@ -1,22 +1,11 @@
-/*Error 1: assigning invalid type to boolean in line 10
-  Error 2: trying to do operations on int and bool in line 10
-  Error 3: Function returns bool instead of int*/
-
-int fun(int arr[], int size) {
-    int i;
-    bool sum;
-    i = 0;
-    while (i || sum) {
-        sum = sum || arr[3];
-        i = i + 1;
-    }
-    return sum;
-}
+/*Test for Array Exp*/
 
 void main(void) {
     int arr[5];
-    int result;
-    bool flag;
-    flag = true;
-    arr[flag] = 5;
+    
+    arr[1] = 7;
+    arr[2] = 3 + 3;
+    arr[3] = arr[2];
+    arr[4] = arr[2] + 1;
+    return;
 }

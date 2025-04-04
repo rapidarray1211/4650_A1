@@ -1,10 +1,9 @@
-import absyn.*;
-import java.io.*;
-import java.util.*;
-
 import Symbol.AnalyzerPrinter;
 import Symbol.SymbolEntry;
 import Symbol.SymbolTable;
+import absyn.*;
+import java.io.*;
+import java.util.*;
 
 public class CodeGenerator implements AbsynVisitor {
     private TMWriter tm;
@@ -100,7 +99,13 @@ public class CodeGenerator implements AbsynVisitor {
         try {
             int value = Integer.parseInt(node.value);
             tm.emitComment("Integer literal: " + value);
+            
             tm.emitRM("LDC", AC, value, 0, "Load constant into R0");
+
+            if (isAddr == false){
+                //Store to temp storage if on the right
+                tm.emitRM("ST",AC,currentLocalOffset,FP,"Store Constant to temp");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -109,24 +114,20 @@ public class CodeGenerator implements AbsynVisitor {
     public void visit(AssignExp node, int level, boolean isAddr) {
         System.out.println("[CG] AssignExp");
         try {
-            tm.emitComment("-> op");
+            tm.emitComment("-> Assign");
         
-            if (node.lhs != null && node.lhs.variable instanceof SimpleVar) {
-                String name = ((SimpleVar) node.lhs.variable).name;
-                SymbolEntry entry = symbolTable.lookup(name);
-                if (entry != null) {
-                    visit((SimpleVar)node.lhs.variable, level, true);
-                    tm.emitRM("ST", AC, currentLocalOffset--, FP, "Push target address to temp stack");
-                } else {
-                    tm.emitComment("[ERROR] Undeclared variable: " + name);
-                }
-            }
+            //VarExp should store address in temp storage
+            node.lhs.accept(this,level,true);
+
+            //Right expression value should be in AC, increment local offset so we don't
+            //overwrite temp storage of VarExp address
+            currentLocalOffset --;
+            node.rhs.accept(this, level, true);
+            currentLocalOffset ++;
     
-            node.rhs.accept(this, level, false);
-    
-            tm.emitRM("LD", AC1, ++currentLocalOffset, FP, "Load target address");
+            tm.emitRM("LD", AC1, currentLocalOffset, FP, "Load target address");
             tm.emitRM("ST", AC, 0, AC1, "Store value to address");
-            tm.emitComment("<- op");
+            tm.emitComment("<- Assign");
     
         } catch (IOException e) {
             e.printStackTrace();
@@ -140,22 +141,28 @@ public class CodeGenerator implements AbsynVisitor {
     public void visit(OpExp node, int level, boolean isAddr) {
         System.out.println("[CG] OpExp");
         try {
+            //Use isAddr  to determine if the expression is left or right. If the expression is left then the result
+            //is stored in AC, if expression is right the result is stored in Temp Location in stack.
+            //Also perform Right expression first so it doesn't overwrite AC.
+
             tm.emitComment("Binary Operation");
-            node.left.accept(this, level, false);
-            if (!(node.left instanceof CallExp)) {
-                tm.emitRM("ST", AC, currentLocalOffset--, FP, "Push left operand to temp stack");                
-            }
             node.right.accept(this, level, false);
-            tm.emitRM("LD", AC1, ++currentLocalOffset, FP, "Load left operand into R1");
+
+            //increment local offset to make sure previous local offset isn't overwritten
+            currentLocalOffset --;
+            node.left.accept(this, level, true);
+            currentLocalOffset ++;
+
+            //Load value of right expression
+            tm.emitRM("LD", AC1, currentLocalOffset, FP, "Load right expression into R1");
 
             switch (node.op) {
-                case OpExp.PLUS:    tm.emitRO("ADD", AC, AC1, AC, "R0 = R1 + R0"); break;
-                case OpExp.MINUS:   tm.emitRO("SUB", AC, AC1, AC, "R0 = R1 - R0"); break;
-                case OpExp.TIMES:   tm.emitRO("MUL", AC, AC1, AC, "R0 = R1 * R0"); break;
-                case OpExp.OVER:
-                case OpExp.DIVIDE:  tm.emitRO("DIV", AC, AC1, AC, "R0 = R1 / R0"); break;
+                case OpExp.PLUS:    tm.emitRO("ADD", AC, AC, AC1, "R0 = R0 + R1"); break;
+                case OpExp.MINUS:   tm.emitRO("SUB", AC, AC, AC1, "R0 = R0 - R1"); break;
+                case OpExp.TIMES:   tm.emitRO("MUL", AC, AC, AC1, "R0 = R0 * R1"); break;
+                case OpExp.DIVIDE:  tm.emitRO("DIV", AC, AC, AC1, "R0 = R0 / R1"); break;
                 case OpExp.EQ: {
-                    tm.emitRO("SUB", AC, AC1, AC, "op ==");
+                    tm.emitRO("SUB", AC, AC, AC1, "op ==");
                     tm.emitRM("JEQ", AC, 2,  PC, "branch if equal");
                     tm.emitRM("LDC", AC, 0, 0, "false case");
                     tm.emitRM("LDA", PC, 1, PC, "unconditional jump");
@@ -163,7 +170,7 @@ public class CodeGenerator implements AbsynVisitor {
                     break;
                 }                
                 case OpExp.NEQ: {
-                    tm.emitRO("SUB", AC, AC1, AC, "op !=");
+                    tm.emitRO("SUB", AC, AC, AC1, "op !=");
                     tm.emitRM("JNE", AC, 2,  PC, "branch if not equal");
                     tm.emitRM("LDC", AC, 0, 0, "false case");
                     tm.emitRM("LDA", PC, 1, PC, "unconditional jump");
@@ -171,7 +178,7 @@ public class CodeGenerator implements AbsynVisitor {
                     break;
                 }                
                 case OpExp.LT: {
-                    tm.emitRO("SUB", AC, AC1, AC, "op <");
+                    tm.emitRO("SUB", AC, AC, AC1, "op <");
                     tm.emitRM("JLT", AC, 2,  PC, "branch if lt");
                     tm.emitRM("LDC", AC, 0, 0, "false case");
                     tm.emitRM("LDA", PC, 1, PC, "unconditional jump");
@@ -179,7 +186,7 @@ public class CodeGenerator implements AbsynVisitor {
                     break;
                 }                
                 case OpExp.GT: {
-                    tm.emitRO("SUB", AC, AC1, AC, "op >");
+                    tm.emitRO("SUB", AC, AC, AC1, "op >");
                     tm.emitRM("JGT", AC, 2,  PC, "branch if gt");
                     tm.emitRM("LDC", AC, 0, 0, "false case");
                     tm.emitRM("LDA", PC, 1, PC, "unconditional jump");
@@ -187,7 +194,7 @@ public class CodeGenerator implements AbsynVisitor {
                     break;
                 }                                                    
                 case OpExp.LTE: {
-                    tm.emitRO("SUB", AC, AC1, AC, "op <=");
+                    tm.emitRO("SUB", AC, AC, AC1, "op <=");
                     tm.emitRM("JLE", AC, 2,  PC, "branch if lte");
                     tm.emitRM("LDC", AC, 0, 0, "false case");
                     tm.emitRM("LDA", PC, 1, PC, "unconditional jump");
@@ -195,17 +202,26 @@ public class CodeGenerator implements AbsynVisitor {
                     break;
                 }                
                 case OpExp.GTE: {
-                    tm.emitRO("SUB", AC, AC1, AC, "op >=");
+                    tm.emitRO("SUB", AC, AC, AC1, "op >=");
                     tm.emitRM("JGE", AC, 2,  PC, "branch if gte");
                     tm.emitRM("LDC", AC, 0, 0, "false case");
                     tm.emitRM("LDA", PC, 1, PC, "unconditional jump");
                     tm.emitRM("LDC", AC, 1, 0, "true case");
                     break;
-                }                
-                
+                } 
+                case OpExp.AND: break;
+                case OpExp.OR: break;
+                case OpExp.NOT: break;
+                case OpExp.UMINUS: break;
                 default:
                     tm.emitComment("Unsupported operator: " + node.op);
             }
+              
+            //False indicates that this is on the right so store AC into temp.
+            if (isAddr == false){
+                tm.emitRM("ST",AC,currentLocalOffset,FP,"Store AC to temp");
+            }
+            
             tm.emitComment("<- op");
         } catch (IOException e) {
             e.printStackTrace();
@@ -224,56 +240,49 @@ public class CodeGenerator implements AbsynVisitor {
     public void visit(FunctionDec node, int level, boolean isAddr) {
         System.out.println("[CG] FunctionDec: " + node.func_name);
         try {
-            tm.emitComment("-> fundecl");
             tm.emitComment("Jump around function body here");
-            tm.emitComment("Function " + node.func_name);
-            currentLocalOffset = -2;
             int savedLoc = tm.emitSkip(1);
-            node.funaddr = tm.getCurrentLoc();
-    
+            tm.emitComment("Function " + node.func_name);
+			
+			node.funaddr = tm.getCurrentLoc();
+			
             if ("main".equals(node.func_name)) {
                 mainEntry = tm.getCurrentLoc();
             }
 
-            SymbolEntry protFunc = symbolTable.lookup(node.func_name);
-            if (protFunc != null) {
-                int currLoc = tm.getCurrentLoc();
-                int protLoc = protFunc.pc;
-                tm.emitBackup(protLoc);
-                tm.emitRM("LDA", PC, currLoc - protLoc, PC, "Jump to function from prototype");
-                tm.emitRestore();
-            }
-            // Insert function entry and enter new scope
-            System.out.println("Inserting function with offset 0: " + node.func_name );
-            symbolTable.insert(node.func_name, node.return_type.type, 0, 0, tm.getCurrentLoc());
-            symbolTable.enterScope(node.func_name);
-            tm.emitRM("ST", AC, -1, FP, "Store return value");
-            VarDecList params = node.parameters;
-            while (params != null) {
-                if (params.head instanceof SimpleDec) {
-                    String name = ((SimpleDec) params.head).name;
-                    symbolTable.insert(name, ((ArrayDec)params.head).type.type, 0, currentLocalOffset,  0);
-                    currentLocalOffset--;
-                } else if (params.head instanceof ArrayDec) {
-                    String name = ((ArrayDec) params.head).name;
-                    symbolTable.insert(name, ((ArrayDec)params.head).type.type, ((ArrayDec) params.head).size + 1, currentLocalOffset, 0);
-                    currentLocalOffset -= ((ArrayDec) params.head).size + 1;
+            if (node.body instanceof CompoundExp) {
+                SymbolEntry protFunc = symbolTable.lookup(node.func_name);
+
+                if (protFunc != null){
+                    //If prototype is found, make a jump to the function
+                    int currLoc = tm.getCurrentLoc();
+                    int protLoc = protFunc.pc;
+                    tm.emitBackup(protLoc);
+                    tm.emitRM("LDA",PC,currLoc - protLoc,PC,"Jump to function from prototype");
+                    tm.emitRestore();
+                    
                 }
-                params = params.tail;
+                symbolTable.insert(node.func_name,node.return_type.type,0,0,tm.getCurrentLoc());
+                symbolTable.enterScope(node.func_name);
+                currentLocalOffset = -1;
+                tm.emitRM("ST", AC,currentLocalOffset, FP, "Store return value");
+                currentLocalOffset --;
+                node.parameters.accept(this, level + 1, isAddr);
+                node.body.accept(this, level + 1, isAddr);
+                symbolTable.exitScope(node.func_name);
+            } else {
+                //If prototype, skip loc for backpatch
+                tm.emitComment("Prototype function, Jump to function here.");
+                symbolTable.insert(node.func_name, node.return_type.type, 0, 0, tm.emitSkip(1));
+
             }
-            node.body.accept(this, level + 1, false);
-            // After function body, patch the skip around it
             int currLoc = tm.getCurrentLoc();
-            tm.emitRM("LD", PC, -1, FP, "return caller");
             tm.emitBackup(savedLoc);
-            tm.emitRM("LDA", PC, currLoc - savedLoc, PC, "Jump around function");
+            tm.emitRM("LDA",PC,currLoc-savedLoc,PC,"Jump around function");
             tm.emitRestore();
-            tm.emitComment("<- fundec1");
-            symbolTable.exitScope(node.func_name);
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-        
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     
     
@@ -310,17 +319,27 @@ public class CodeGenerator implements AbsynVisitor {
     public void visit(VarExp node, int level, boolean isAddr) {
         System.out.println("[CG] VarExp");
         try {
-            if (node.variable instanceof SimpleVar) {
-                String name = ((SimpleVar) node.variable).name;
+            if (node.variable instanceof SimpleVar variable) {
+                String name = variable.name;
                 
                 SymbolEntry entry = symbolTable.lookup(name);
                 System.out.println("[DEBUG] Lookup '" + name + "' => offset=" + entry.offset + " scope=" + entry.scope);
+
                 int baseReg = entry.scope == 0 ? GP : FP;
+
+                //Store the address of variable in temp if true and also keep value in AC.
+                //If False, store value in temp.                 
                 if (isAddr) {
                     tm.emitRM("LDA", AC, entry.offset, baseReg, "Get address of variable '" + name + "'");
+                    tm.emitRM("ST",AC,currentLocalOffset,FP,"Store Address");
+                    tm.emitRM("LD", AC, entry.offset, baseReg, "Load value of variable '" + name + "'");
                 } else {
                     tm.emitRM("LD", AC, entry.offset, baseReg, "Load value of variable '" + name + "'");
+                    tm.emitRM("ST",AC,currentLocalOffset,FP,"Store Value");
                 }
+            }
+            else if(node.variable instanceof  IndexVar variable){
+                variable.accept(this, level, isAddr);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -451,6 +470,12 @@ public class CodeGenerator implements AbsynVisitor {
 			int val = exp.value ? 1 : 0;
 			tm.emitComment("Boolean literal: " + val);
 			tm.emitRM("LDC", AC, val, 0, "Load boolean constant into R0");
+
+            if (!isAddr){
+                //Store to temp sotrage if on right
+                tm.emitRM("ST", AC, currentLocalOffset,FP,"Store to temp");
+            }
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -460,27 +485,40 @@ public class CodeGenerator implements AbsynVisitor {
     public void visit(IndexVar exp, int level, boolean isAddr) {
         System.out.println("[CG] IndexVar: " + exp.name);
         try {
-            // Evaluate index expression first
-            exp.index.accept(this, level, false);
-    
-            // Look up array base address from symbol table
-            SymbolEntry entry = symbolTable.lookup(exp.name);
-            if (entry == null) {
-                tm.emitComment("[ERROR] Undeclared array: " + exp.name);
-                return;
-            }
-    
+            String name = exp.name;
+
+            SymbolEntry entry = symbolTable.lookup(name);
+            System.out.println("[DEBUG] Lookup '" + name + "' => offset=" + entry.offset + " scope=" + entry.scope);
+            tm.emitComment("-> lookup Array:" + name );
+
             int baseReg = entry.scope == 0 ? GP : FP;
-    
-            // Load base address of array into AC1
-            tm.emitRM("LDA", AC1, entry.offset, baseReg, "Load base address of array '" + exp.name + "'");
-    
-            // Add index offset to get element address
-            tm.emitRO("ADD", AC, AC1, AC, "Compute indexed address");
-    
-            if (!isAddr) {
-                tm.emitRM("LD", AC, 0, AC, "Load array element value");
+
+            tm.emitRM("LDA", AC, entry.offset, baseReg, "Get address of variable '" + name + "'");
+            tm.emitRM("ST",AC,currentLocalOffset,FP,"Store Address");
+
+            //Get the value of index, should be stored in AC
+            exp.index.accept(this, level, true);
+
+            tm.emitRM("JLT",AC,1,PC,"HALT if index < 0" );
+            tm.emitRM("LDA",PC,1,PC, "Absolute jump if not");
+            tm.emitRO("HALT",0,0,0,"Halt if index < 0");
+            tm.emitRM("LD", AC1,currentLocalOffset, FP, "Load array base address");
+            tm.emitRO("SUB", AC, AC1, AC, "address is stored in AC");
+
+            if (isAddr) {
+                //Additionaly store location of memory in temp
+                tm.emitRM("ST",AC,currentLocalOffset,FP, "Store address in temp");
+
+                tm.emitRM("LD", AC,0,AC, "Load value at array index");
+
+            } else {
+
+                tm.emitRM("LD", AC,0,AC, "Load value at array index");
+
+                //Additionaly store value in temp
+                tm.emitRM("ST",AC,currentLocalOffset,FP, "Store value in temp");
             }
+            tm.emitComment("<- lookup Array:" + name );
         } catch (IOException e) {
             e.printStackTrace();
         }
