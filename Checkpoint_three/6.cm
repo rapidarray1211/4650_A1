@@ -1,0 +1,19 @@
+/*
+Error 1: declaring and initializing variable in same statement
+Error 2: missing left paranthesis of if statement
+*/
+
+
+int globalVar; 
+
+void initializeArray(int arr[], int size) {
+    int y = 5;
+    int i;
+    i = 0;
+
+    while (i < size) {
+        arr[i] = i+2;
+        i = i + 1;
+    }
+    if x<5) return;
+}

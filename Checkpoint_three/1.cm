@@ -1,5 +1,12 @@
+/* testing assignment*/
+/* sum should be 15 */
 void main(void) {
-  int x;
-  x = 3;
-  output(x);
+  int sum;
+  int u;
+  int v;
+  u = 20;
+  v = 2;
+  sum = u - u/(v*v);
+  output(sum);
+  return;
 }
