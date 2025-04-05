@@ -12,9 +12,6 @@ void main(void) {
     if (i){
         output(1);
     }
-    else{
-        output(0);
-    }
 
     return;
 }

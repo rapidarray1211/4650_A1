@@ -37,7 +37,7 @@ public class CodeGenerator implements AbsynVisitor {
 
     public void visit(Absyn root) throws IOException {
         //System.out.println("[CG] Visiting Root Node");
-        symbolTable.enterScope("Global", false);
+        symbolTable.enterScope("Global",false);
         emitPrelude();
         root.accept(this, 0, false);
         emitFinale();
