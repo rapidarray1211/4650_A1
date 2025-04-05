@@ -1,14 +1,20 @@
-/* Test for OP exp*/
+/* Test for bool exp*/
 
 void main(void) {
-    int i;
-    int sum;
-    i = 5;
-    sum = i + i;
-    sum = i * 2;
-    sum = i / 4;
-    sum = i - 1;
+    bool i;
+    int x;
+    int y;
+    y = 5;
+    x = input();
+    
+    i = x > y;
 
-    output(sum);
+    if (i){
+        output(1);
+    }
+    else{
+        output(0);
+    }
+
     return;
 }

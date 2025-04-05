@@ -1,33 +1,13 @@
-/* Has additional checks for unary operators.
-   Also has variables in main in a different scope so should get lots of errors.  */
+/*
+Error 1: parameter of main is empty, should be void
+Error 2: Array Declartion does not have a number inside
+*/
 
-void initializeArray(int arr[], int size);
-void printResult(int num, bool check);
-int sumArray(int arr[], int size);
 
-int globalVar;
-
-bool isEven(int num) {
-    return ~((num / 2) * 2 == num);
-}
-
-void printResult(int num, bool check) {
-
-    num = -num;
-
-    if (check) {
-        isEven(num);
-    } else {
-        isEven(0);
-    }
-}
-
-void main(void) {
-    {
-        int arr[5];
-        int result;
-        bool flag;
-    }
+void main() {
+    int arr[];
+    int result;
+    bool flag;
 
     initializeArray(arr, 5);
 
@@ -41,7 +21,9 @@ void main(void) {
         result = result - 1;
         flag = isEven(result);
         if (flag) {
-            isEven(result);
+            output(result);
         }
     }
+
+    return;
 }

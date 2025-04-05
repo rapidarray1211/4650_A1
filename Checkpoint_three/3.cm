@@ -1,11 +1,16 @@
-/*Test for Array Exp*/
+/*Test for Functions*/
+int sum(int x, int y){
+    return (x + y);
+}
 
 void main(void) {
-    int arr[5];
     
-    arr[1] = 7;
-    arr[2] = 3 + 3;
-    arr[3] = arr[2];
-    arr[4] = arr[2] + 1;
+    int x;
+    int y;
+
+    x = input();
+    y = input();
+
+    output(sum(x,y));
     return;
 }
